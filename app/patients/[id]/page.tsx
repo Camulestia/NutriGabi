@@ -7,8 +7,15 @@ import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function PatientPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PatientPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ updated?: string }>;
+}) {
   const { id } = await params;
+  const { updated } = await searchParams;
   const patient = await getPatientById(id);
 
   if (!patient) notFound();
@@ -43,5 +50,14 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
       }))
     : [];
 
-  return <PatientProfileV2 patient={patient} latest={latest} history={history} evolutionData={evolutionData} alertItems={alertItems} />;
+  return (
+    <PatientProfileV2
+      patient={patient}
+      latest={latest}
+      history={history}
+      evolutionData={evolutionData}
+      alertItems={alertItems}
+      showUpdatedFeedback={updated === "1"}
+    />
+  );
 }

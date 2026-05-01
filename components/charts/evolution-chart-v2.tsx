@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -23,9 +23,10 @@ export function EvolutionChartV2({ data }: { data: EvolutionPoint[] }) {
           <Line type="monotone" dataKey="weight" stroke="#1f9d8b" strokeWidth={3} dot={false} activeDot={{ r: 5 }} name="Peso" />
           <Line type="monotone" dataKey="waist" stroke="#3fb6a7" strokeWidth={2.5} dot={false} name="Cintura" />
           <Line type="monotone" dataKey="bodyFatPercent" stroke="#7ccdc2" strokeWidth={2} dot={false} name="% gordura" />
-          <Line type="monotone" dataKey="phaseAngle" stroke="#0f766e" strokeWidth={2} dot={false} name="Ângulo de fase" />
+            <Line type="monotone" dataKey="phaseAngle" stroke="#0f766e" strokeWidth={2} dot={false} name="Ângulo de fase" />
         </LineChart>
       </ResponsiveContainer>
     </div>
   );
 }
+

@@ -1,7 +1,7 @@
 ﻿"use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarClock, ClipboardList, Search } from "lucide-react";
 
@@ -10,7 +10,7 @@ import { SearchInput } from "@/components/ui/search-input";
 import { buttonStyles } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MetricCard } from "@/components/ui/metric-card";
-import { buildCompletedScheduleItems, mapVisitReasonToScheduleType, shouldAppearInReturnList } from "@/lib/consultation-date";
+import { buildCompletedScheduleItems, normalizeScheduleDateKey, shouldAppearInReturnList } from "@/lib/consultation-date";
 import { Patient, ScheduleItem } from "@/lib/types";
 import { calculateAge, formatDate } from "@/lib/utils";
 
@@ -48,67 +48,36 @@ function toLookup(patient: Patient): PatientLookup {
   };
 }
 
-function buildMockScheduledItems(patients: Patient[]): ScheduleItem[] {
-  const [firstPatient, secondPatient, thirdPatient] = patients;
-  const todayIso = new Date().toISOString();
-  const items: ScheduleItem[] = [];
-
-  if (firstPatient) {
-    items.push({
-      id: "sched-001",
-      patientId: firstPatient.id,
-      patientName: firstPatient.name,
-      consultationId: undefined,
-      date: todayIso,
-      time: "08:00",
-      reason: "Retorno",
-      type: "retorno",
-      status: "agendada"
-    });
-  }
-
-  if (secondPatient) {
-    items.push({
-      id: "sched-002",
-      patientId: secondPatient.id,
-      patientName: secondPatient.name,
-      consultationId: undefined,
-      date: todayIso,
-      time: "10:30",
-      reason: secondPatient.consultations.length ? "Avaliação física" : "Primeira consulta",
-      type: secondPatient.consultations.length ? "avaliação" : "primeira consulta",
-      status: "agendada"
-    });
-  }
-
-  if (thirdPatient) {
-    items.push({
-      id: "sched-003",
-      patientId: thirdPatient.id,
-      patientName: thirdPatient.name,
-      consultationId: undefined,
-      date: todayIso,
-      time: "14:00",
-      reason: "Retorno",
-      type: "retorno",
-      status: "concluída"
-    });
-  }
-
-  return items;
-}
-
 export function OverviewDashboard({ patients }: { patients: Patient[] }) {
   const [query, setQuery] = useState("");
+  const [scheduledItems, setScheduledItems] = useState<ScheduleItem[]>([]);
   const today = new Date();
   const lookups = useMemo(() => patients.map(toLookup), [patients]);
+
+  useEffect(() => {
+    const loadSchedule = async () => {
+      const response = await fetch("/api/schedule");
+      if (!response.ok) return;
+      const items = (await response.json()) as ScheduleItem[];
+      setScheduledItems(items);
+    };
+
+    void loadSchedule();
+  }, []);
+
   const schedule = useMemo(() => {
-    const todayKey = toMidnight(today).getTime();
-    const completedToday = buildCompletedScheduleItems(patients).filter((item) => toMidnight(new Date(item.date)).getTime() === todayKey);
-    const occupiedSlots = new Set(completedToday.map((item) => item.patientId));
-    const mockScheduled = buildMockScheduledItems(patients).filter((item) => !occupiedSlots.has(item.patientId));
-    return [...completedToday, ...mockScheduled];
-  }, [patients, today]);
+    const completedItems = buildCompletedScheduleItems(patients);
+    const manualIds = new Set(scheduledItems.map((item) => `${item.patientId}-${normalizeScheduleDateKey(item.date)}-${item.time}-${item.status}`));
+
+    return [
+      ...scheduledItems.map((item) => ({ ...item, date: normalizeScheduleDateKey(item.date) })),
+      ...completedItems.filter((item) => !manualIds.has(`${item.patientId}-${normalizeScheduleDateKey(item.date)}-${item.time}-${item.status}`))
+    ].sort((first, second) => {
+      const firstDate = new Date(`${first.date}T${first.time}`).getTime();
+      const secondDate = new Date(`${second.date}T${second.time}`).getTime();
+      return firstDate - secondDate;
+    });
+  }, [patients, scheduledItems]);
 
   const filteredPatients = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -180,7 +149,7 @@ export function OverviewDashboard({ patients }: { patients: Patient[] }) {
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-[1.15fr_1fr]">
-        <TodaySchedule schedule={schedule} fallbackPatientId={patients[0]?.id} />
+        <TodaySchedule patients={patients} schedule={schedule} onScheduleCreated={(item) => setScheduledItems((current) => [...current, item])} />
 
         <Card className="p-6">
           <div className="flex items-center gap-3">

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
 import "@/app/globals.css";
@@ -16,6 +16,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR">
+      <head>
+        <meta charSet="UTF-8" />
+      </head>
       <body className={inter.className}>
         <AppShellV2>{children}</AppShellV2>
       </body>

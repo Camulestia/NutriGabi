@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { startTransition, useEffect, useMemo, useState } from "react";
@@ -164,7 +164,7 @@ export function ConsultationWizardV3({
     });
 
     if (!response.ok) {
-      setErrorMessage("N?o foi poss?vel salvar a consulta. Tente novamente.");
+      setErrorMessage("Não foi possível salvar a consulta. Tente novamente.");
       setSaving(false);
       return;
     }
@@ -187,7 +187,7 @@ export function ConsultationWizardV3({
       body: JSON.stringify({ patientId: patient.id, consultation: normalizedForm })
     });
     if (!response.ok) {
-      setErrorMessage("N?o foi poss?vel gerar a interpreta??o com IA agora.");
+      setErrorMessage("Não foi possível gerar a interpretação com IA agora.");
       setSaving(false);
       return;
     }
@@ -203,7 +203,7 @@ export function ConsultationWizardV3({
   const saveDraftNow = async () => {
     await persistConsultation({
       clearDraft: false,
-      successMessage: `Avalia??o salva ?s ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+      successMessage: `Avaliação salva às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
     });
   };
 
@@ -306,7 +306,6 @@ export function ConsultationWizardV3({
     </div>
   );
 }
-
 function StepContent({
   step,
   form,
@@ -332,41 +331,15 @@ function StepContent({
     return (
       <StepSection eyebrow="Etapa 1" title="Identificação" description="Registre a data e o contexto principal desta consulta.">
         <div className="grid gap-4 md:grid-cols-2">
-          <InputField
-            label="Data da consulta"
-            type="date"
-            value={getConsultationDateValue(form.createdAt)}
-            hint="A data da consulta será usada para histórico, agenda e lembrete automático de retorno."
-            onChange={(value) => updateField("createdAt", value)}
-          />
+          <InputField label="Data da consulta" type="date" value={getConsultationDateValue(form.createdAt)} hint="A data da consulta será usada para histórico, agenda e lembrete automático de retorno." onChange={(value) => updateField("createdAt", value)} />
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-ink">Motivo da visita</span>
-            <select
-              className="h-12 w-full rounded-2xl border border-line bg-white px-4 text-sm text-ink shadow-sm outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10"
-              value={form.visitReason ?? "Retorno"}
-              onChange={(event) => updateField("visitReason", event.target.value)}
-            >
-              {visitReasons.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
+            <select className="h-12 w-full rounded-2xl border border-line bg-white px-4 text-sm text-ink shadow-sm outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10" value={form.visitReason ?? "Retorno"} onChange={(event) => updateField("visitReason", event.target.value)}>
+              {visitReasons.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
           </label>
-          <InputField
-            label="Queixa principal"
-            value={form.chiefComplaint}
-            textarea
-            placeholder="Descreva a principal queixa ou demanda trazida pelo paciente."
-            onChange={(value) => updateField("chiefComplaint", value)}
-          />
-          <InputField
-            label="Objetivo principal"
-            value={form.objective}
-            textarea
-            placeholder="Ex.: emagrecimento, ganho de massa, melhora de exames, performance, saúde intestinal."
-            onChange={(value) => updateField("objective", value)}
-          />
+          <InputField label="Queixa principal" value={form.chiefComplaint} textarea placeholder="Descreva a principal queixa ou demanda trazida pelo paciente." onChange={(value) => updateField("chiefComplaint", value)} />
+          <InputField label="Objetivo principal" value={form.objective} textarea placeholder="Ex.: emagrecimento, ganho de massa, melhora de exames, performance, saúde intestinal." onChange={(value) => updateField("objective", value)} />
         </div>
       </StepSection>
     );
@@ -387,21 +360,9 @@ function StepContent({
     return (
       <StepSection eyebrow="Etapa 2" title="Anamnese" description="Campos amplos para registrar hábitos, sintomas e rotina do paciente.">
         <div className="grid gap-4 md:grid-cols-2">
-          <BinaryChoiceField
-            label="Vegetariana/vegana"
-            value={normalizeBinaryChoice(form.anamnesis.vegetarianPattern)}
-            hint="Selecione se o paciente segue padrão vegetariano ou vegano."
-            onChange={(nextValue) => updateField("anamnesis.vegetarianPattern", nextValue)}
-          />
-          <BinaryChoiceField
-            label="Doença celíaca"
-            value={normalizeBinaryChoice(form.anamnesis.celiacDisease)}
-            hint="Selecione se há relato ou diagnóstico prévio."
-            onChange={(nextValue) => updateField("anamnesis.celiacDisease", nextValue)}
-          />
-          {fields.map(([label, path, value, textarea, placeholder]) => (
-            <InputField key={path} label={label} value={value} textarea={textarea} placeholder={placeholder} onChange={(nextValue) => updateField(path, nextValue)} />
-          ))}
+          <BinaryChoiceField label="Vegetariana/vegana" value={normalizeBinaryChoice(form.anamnesis.vegetarianPattern)} hint="Selecione se o paciente segue padrão vegetariano ou vegano." onChange={(nextValue) => updateField("anamnesis.vegetarianPattern", nextValue)} />
+          <BinaryChoiceField label="Doença celíaca" value={normalizeBinaryChoice(form.anamnesis.celiacDisease)} hint="Selecione se há relato ou diagnóstico prévio." onChange={(nextValue) => updateField("anamnesis.celiacDisease", nextValue)} />
+          {fields.map(([label, path, value, textarea, placeholder]) => <InputField key={path} label={label} value={value} textarea={textarea} placeholder={placeholder} onChange={(nextValue) => updateField(path, nextValue)} />)}
         </div>
       </StepSection>
     );
@@ -411,31 +372,8 @@ function StepContent({
     return (
       <StepSection eyebrow="Etapa 3" title="Antropometria" description="Agrupe medidas corporais e dobras cutâneas com leitura visual imediata dos resultados.">
         <div className="grid gap-6">
-          <FieldGrid
-            title="Medidas corporais"
-            fields={[
-              ["Peso atual (kg)", "anthropometry.currentWeight", form.anthropometry.currentWeight, "Ex.: 72.4"],
-              ["Peso habitual (kg)", "anthropometry.habitualWeight", form.anthropometry.habitualWeight, "Ex.: 78"],
-              ["Peso desejado (kg)", "anthropometry.desiredWeight", form.anthropometry.desiredWeight, "Ex.: 68"],
-              ["Altura (m)", "anthropometry.height", form.anthropometry.height, "Ex.: 1.68"],
-              ["Cintura (cm)", "anthropometry.waist", form.anthropometry.waist, "Ex.: 84"],
-              ["Quadril (cm)", "anthropometry.hip", form.anthropometry.hip, "Ex.: 102"],
-              ["Braço (cm)", "anthropometry.arm", form.anthropometry.arm, "Ex.: 30"],
-              ["Panturrilha (cm)", "anthropometry.calf", form.anthropometry.calf, "Ex.: 36"],
-              ["Punho (cm)", "anthropometry.wrist", form.anthropometry.wrist, "Ex.: 16"]
-            ]}
-            updateField={updateField}
-          />
-          <FieldGrid
-            title="Dobras cutâneas"
-            fields={[
-              ["Dobra tricipital", "anthropometry.skinfolds.tricipital", form.anthropometry.skinfolds.tricipital, "Ex.: 22"],
-              ["Subescapular", "anthropometry.skinfolds.subscapular", form.anthropometry.skinfolds.subscapular, "Ex.: 25"],
-              ["Supra-ilíaca", "anthropometry.skinfolds.suprailiac", form.anthropometry.skinfolds.suprailiac, "Ex.: 27"],
-              ["Abdominal", "anthropometry.skinfolds.abdominal", form.anthropometry.skinfolds.abdominal, "Ex.: 30"]
-            ]}
-            updateField={updateField}
-          />
+          <FieldGrid title="Medidas corporais" fields={[["Peso atual (kg)", "anthropometry.currentWeight", form.anthropometry.currentWeight, "Ex.: 72.4"], ["Peso habitual (kg)", "anthropometry.habitualWeight", form.anthropometry.habitualWeight, "Ex.: 78"], ["Peso desejado (kg)", "anthropometry.desiredWeight", form.anthropometry.desiredWeight, "Ex.: 68"], ["Altura (m)", "anthropometry.height", form.anthropometry.height, "Ex.: 1.68"], ["Cintura (cm)", "anthropometry.waist", form.anthropometry.waist, "Ex.: 84"], ["Quadril (cm)", "anthropometry.hip", form.anthropometry.hip, "Ex.: 102"], ["Braço (cm)", "anthropometry.arm", form.anthropometry.arm, "Ex.: 30"], ["Panturrilha (cm)", "anthropometry.calf", form.anthropometry.calf, "Ex.: 36"], ["Punho (cm)", "anthropometry.wrist", form.anthropometry.wrist, "Ex.: 16"]]} updateField={updateField} />
+          <FieldGrid title="Dobras cutâneas" fields={[["Dobra tricipital", "anthropometry.skinfolds.tricipital", form.anthropometry.skinfolds.tricipital, "Ex.: 22"], ["Subescapular", "anthropometry.skinfolds.subscapular", form.anthropometry.skinfolds.subscapular, "Ex.: 25"], ["Supra-ilíaca", "anthropometry.skinfolds.suprailiac", form.anthropometry.skinfolds.suprailiac, "Ex.: 27"], ["Abdominal", "anthropometry.skinfolds.abdominal", form.anthropometry.skinfolds.abdominal, "Ex.: 30"]]} updateField={updateField} />
         </div>
       </StepSection>
     );
@@ -448,24 +386,13 @@ function StepContent({
           {Object.entries(form.semiology).map(([key, item]) => (
             <div key={key} className="rounded-3xl border border-line bg-white p-4">
               <p className="text-sm font-semibold text-ink">{item.label}</p>
-              <select
-                className="mt-3 h-12 w-full rounded-2xl border border-line bg-white px-4 text-sm text-ink shadow-sm outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10"
-                value={item.severity}
-                onChange={(event) => updateField(`semiology.${key}.severity`, event.target.value)}
-              >
+              <select className="mt-3 h-12 w-full rounded-2xl border border-line bg-white px-4 text-sm text-ink shadow-sm outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10" value={item.severity} onChange={(event) => updateField(`semiology.${key}.severity`, event.target.value)}>
                 <option value="normal">Normal</option>
                 <option value="leve">Leve</option>
                 <option value="moderado">Moderado</option>
                 <option value="grave">Grave</option>
               </select>
-              <InputField
-                label="Observações"
-                value={item.observation}
-                textarea
-                placeholder="Registre sinais observados, distribuição ou contexto clínico."
-                onChange={(value) => updateField(`semiology.${key}.observation`, value)}
-                className="mt-2"
-              />
+              <InputField label="Observações" value={item.observation} textarea placeholder="Registre sinais observados, distribuição ou contexto clínico." onChange={(value) => updateField(`semiology.${key}.observation`, value)} className="mt-2" />
             </div>
           ))}
         </div>
@@ -476,22 +403,7 @@ function StepContent({
   if (step === 4) {
     return (
       <StepSection eyebrow="Etapa 5" title="Bioimpedância" description="Registre composição corporal, compartimentos hídricos e indicadores funcionais.">
-        <FieldGrid
-          title="Resultados de bioimpedância"
-          fields={[
-            ["% gordura", "bioimpedance.bodyFatPercent", form.bioimpedance.bodyFatPercent, "Ex.: 29.4"],
-            ["Massa gorda", "bioimpedance.fatMass", form.bioimpedance.fatMass, "Ex.: 21.8"],
-            ["Massa magra", "bioimpedance.leanMass", form.bioimpedance.leanMass, "Ex.: 48.6"],
-            ["Massa muscular", "bioimpedance.muscleMass", form.bioimpedance.muscleMass, "Ex.: 26.1"],
-            ["Água total", "bioimpedance.totalBodyWater", form.bioimpedance.totalBodyWater, "Ex.: 35.9"],
-            ["Água intracelular", "bioimpedance.intracellularWater", form.bioimpedance.intracellularWater, "Ex.: 21.0"],
-            ["Água extracelular", "bioimpedance.extracellularWater", form.bioimpedance.extracellularWater, "Ex.: 14.9"],
-            ["Gordura visceral", "bioimpedance.visceralFat", form.bioimpedance.visceralFat, "Ex.: 9"],
-            ["Ângulo de fase", "bioimpedance.phaseAngle", form.bioimpedance.phaseAngle, "Ex.: 5.8"],
-            ["TMB", "bioimpedance.bmr", form.bioimpedance.bmr, "Ex.: 1480"]
-          ]}
-          updateField={updateField}
-        />
+        <FieldGrid title="Resultados de bioimpedância" fields={[["% gordura", "bioimpedance.bodyFatPercent", form.bioimpedance.bodyFatPercent, "Ex.: 29.4"], ["Massa gorda", "bioimpedance.fatMass", form.bioimpedance.fatMass, "Ex.: 21.8"], ["Massa magra", "bioimpedance.leanMass", form.bioimpedance.leanMass, "Ex.: 48.6"], ["Massa muscular", "bioimpedance.muscleMass", form.bioimpedance.muscleMass, "Ex.: 26.1"], ["Água total", "bioimpedance.totalBodyWater", form.bioimpedance.totalBodyWater, "Ex.: 35.9"], ["Água intracelular", "bioimpedance.intracellularWater", form.bioimpedance.intracellularWater, "Ex.: 21.0"], ["Água extracelular", "bioimpedance.extracellularWater", form.bioimpedance.extracellularWater, "Ex.: 14.9"], ["Gordura visceral", "bioimpedance.visceralFat", form.bioimpedance.visceralFat, "Ex.: 9"], ["Ângulo de fase", "bioimpedance.phaseAngle", form.bioimpedance.phaseAngle, "Ex.: 5.8"], ["TMB", "bioimpedance.bmr", form.bioimpedance.bmr, "Ex.: 1480"]]} updateField={updateField} />
       </StepSection>
     );
   }
@@ -500,36 +412,11 @@ function StepContent({
     return (
       <StepSection eyebrow="Etapa 6" title="Exames" description="Organize marcadores laboratoriais com campos claros e espaço livre para complementar.">
         <div className="grid gap-4 md:grid-cols-2">
-          {[
-            ["Vitamina D", "labExam.vitaminD", form.labExam.vitaminD],
-            ["B12", "labExam.b12", form.labExam.b12],
-            ["Ferro", "labExam.iron", form.labExam.iron],
-            ["Ferritina", "labExam.ferritin", form.labExam.ferritin],
-            ["Zinco", "labExam.zinc", form.labExam.zinc],
-            ["Folato", "labExam.folate", form.labExam.folate],
-            ["Glicemia", "labExam.glucose", form.labExam.glucose],
-            ["Insulina", "labExam.insulin", form.labExam.insulin],
-            ["HOMA-IR", "labExam.homaIr", form.labExam.homaIr],
-            ["Perfil lipídico", "labExam.lipidProfile", form.labExam.lipidProfile],
-            ["PCR", "labExam.crp", form.labExam.crp],
-            ["TSH / T4", "labExam.tshT4", form.labExam.tshT4],
-            ["Albumina", "labExam.albumin", form.labExam.albumin],
-            ["Campo livre", "labExam.notes", form.labExam.notes]
-          ].map(([label, path, value]) => (
-            <InputField
-              key={path}
-              label={label}
-              value={String(value)}
-              textarea={path === "labExam.notes"}
-              placeholder="Informe o resultado ou a observação clínica."
-              onChange={(nextValue) => updateField(path, nextValue)}
-            />
-          ))}
+          {[ ["Vitamina D", "labExam.vitaminD", form.labExam.vitaminD], ["B12", "labExam.b12", form.labExam.b12], ["Ferro", "labExam.iron", form.labExam.iron], ["Ferritina", "labExam.ferritin", form.labExam.ferritin], ["Zinco", "labExam.zinc", form.labExam.zinc], ["Folato", "labExam.folate", form.labExam.folate], ["Glicemia", "labExam.glucose", form.labExam.glucose], ["Insulina", "labExam.insulin", form.labExam.insulin], ["HOMA-IR", "labExam.homaIr", form.labExam.homaIr], ["Perfil lipídico", "labExam.lipidProfile", form.labExam.lipidProfile], ["PCR", "labExam.crp", form.labExam.crp], ["TSH / T4", "labExam.tshT4", form.labExam.tshT4], ["Albumina", "labExam.albumin", form.labExam.albumin], ["Campo livre", "labExam.notes", form.labExam.notes] ].map(([label, path, value]) => <InputField key={path} label={label} value={String(value)} textarea={path === "labExam.notes"} placeholder="Informe o resultado ou a observação clínica." onChange={(nextValue) => updateField(path, nextValue)} />)}
         </div>
       </StepSection>
     );
   }
-
   if (step === 6) {
     return (
       <StepSection eyebrow="Etapa 7" title="Interpretação IA" description="A IA consolida os dados da avaliação com linguagem segura e orientada à conduta nutricional.">
@@ -581,9 +468,7 @@ function StepContent({
         </div>
 
         {(!form.professionalDiagnosis.trim() || !form.conduct.trim()) ? (
-          <div className="rounded-3xl border border-[#f7dbad] bg-[#fff7eb] p-4 text-sm text-[#b45309]">
-            Relatório sem avaliação profissional completa.
-          </div>
+          <div className="rounded-3xl border border-[#f7dbad] bg-[#fff7eb] p-4 text-sm text-[#b45309]">Relatório sem avaliação profissional completa.</div>
         ) : null}
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.9fr)]">
@@ -592,55 +477,13 @@ function StepContent({
               <p className="text-sm font-semibold text-ink">Avaliação do nutricionista</p>
               <p className="mt-1 text-sm text-muted">Registre o julgamento profissional separadamente da interpretação assistida por IA.</p>
               <div className="mt-5 grid gap-4">
-                <InputField
-                  label="Diagnóstico do profissional"
-                  value={form.professionalDiagnosis}
-                  textarea
-                  placeholder="Registre sua avaliação nutricional, hipótese principal e interpretação clínica."
-                  onChange={(value) => updateField("professionalDiagnosis", value)}
-                />
-                <InputField
-                  label="Conduta"
-                  value={form.conduct}
-                  textarea
-                  placeholder="Descreva a conduta nutricional proposta, ajustes alimentares, suplementação quando aplicável e orientações gerais."
-                  onChange={(value) => updateField("conduct", value)}
-                />
-                <InputField
-                  label="Metas"
-                  value={form.goals}
-                  textarea
-                  placeholder="Ex.: reduzir circunferência abdominal, melhorar exames, aumentar massa magra, regular sintomas intestinais."
-                  onChange={(value) => updateField("goals", value)}
-                />
-                <InputField
-                  label="Acompanhamento"
-                  value={form.followUp}
-                  textarea
-                  placeholder="Defina prazo de retorno, parâmetros a acompanhar e próximos passos."
-                  onChange={(value) => updateField("followUp", value)}
-                />
-                <InputField
-                  label="Observações para o paciente"
-                  value={form.patientNotes ?? ""}
-                  textarea
-                  placeholder="Mensagem resumida e compreensível para o paciente."
-                  onChange={(value) => updateField("patientNotes", value)}
-                />
-                <InputField
-                  label="Observações internas"
-                  value={form.internalNotes ?? ""}
-                  textarea
-                  placeholder="Anotações privadas do profissional, não necessariamente exibidas ao paciente."
-                  onChange={(value) => updateField("internalNotes", value)}
-                />
-                <InputField
-                  label="Prioridades para próxima consulta"
-                  value={form.nextVisitPriorities ?? ""}
-                  textarea
-                  placeholder="Liste os pontos principais que devem ser reavaliados no próximo atendimento."
-                  onChange={(value) => updateField("nextVisitPriorities", value)}
-                />
+                <InputField label="Diagnóstico do profissional" value={form.professionalDiagnosis} textarea placeholder="Registre sua avaliação nutricional, hipótese principal e interpretação clínica." onChange={(value) => updateField("professionalDiagnosis", value)} />
+                <InputField label="Conduta" value={form.conduct} textarea placeholder="Descreva a conduta nutricional proposta, ajustes alimentares, suplementação quando aplicável e orientações gerais." onChange={(value) => updateField("conduct", value)} />
+                <InputField label="Metas" value={form.goals} textarea placeholder="Ex.: reduzir circunferência abdominal, melhorar exames, aumentar massa magra, regular sintomas intestinais." onChange={(value) => updateField("goals", value)} />
+                <InputField label="Acompanhamento" value={form.followUp} textarea placeholder="Defina prazo de retorno, parâmetros a acompanhar e próximos passos." onChange={(value) => updateField("followUp", value)} />
+                <InputField label="Observações para o paciente" value={form.patientNotes ?? ""} textarea placeholder="Mensagem resumida e compreensível para o paciente." onChange={(value) => updateField("patientNotes", value)} />
+                <InputField label="Observações internas" value={form.internalNotes ?? ""} textarea placeholder="Anotações privadas do profissional, não necessariamente exibidas ao paciente." onChange={(value) => updateField("internalNotes", value)} />
+                <InputField label="Prioridades para próxima consulta" value={form.nextVisitPriorities ?? ""} textarea placeholder="Liste os pontos principais que devem ser reavaliados no próximo atendimento." onChange={(value) => updateField("nextVisitPriorities", value)} />
               </div>
             </div>
 
@@ -663,29 +506,16 @@ function StepContent({
                   <ListCard title="Próxima consulta" items={form.aiInterpretation.nextConsultationSuggestions} />
                 </div>
               ) : (
-                <div className="mt-4 rounded-2xl border border-dashed border-line bg-[#f7f9fa] p-4 text-sm text-muted">
-                  Gere a interpretação na etapa anterior para complementar o relatório final.
-                </div>
+                <div className="mt-4 rounded-2xl border border-dashed border-line bg-[#f7f9fa] p-4 text-sm text-muted">Gere a interpretação na etapa anterior para complementar o relatório final.</div>
               )}
             </div>
 
             <div className="rounded-3xl border border-line bg-white p-5">
               <p className="text-sm font-semibold text-ink">Ações do relatório</p>
               <div className="mt-4 flex flex-col gap-3">
-                <Button variant="secondary" onClick={saveDraftNow}>
-                  <Save className="h-4 w-4" />
-                  Salvar avaliação
-                </Button>
-                <ReportPdfDownload
-                  patient={patient}
-                  consultation={form}
-                  label="Exportar PDF"
-                  className="inline-flex w-full items-center justify-center rounded-full border border-line bg-white px-4 py-2.5 text-sm font-medium text-ink transition hover:border-moss/30 hover:bg-[#effbf8] disabled:opacity-60"
-                />
-                <Button onClick={saveConsultation} disabled={saving} className="px-5">
-                  <Save className="h-4 w-4" />
-                  {saving ? "Finalizando..." : "Finalizar consulta"}
-                </Button>
+                <Button variant="secondary" onClick={saveDraftNow}><Save className="h-4 w-4" />Salvar avaliação</Button>
+                <ReportPdfDownload patient={patient} consultation={form} label="Exportar PDF" className="inline-flex w-full items-center justify-center rounded-full border border-line bg-white px-4 py-2.5 text-sm font-medium text-ink transition hover:border-moss/30 hover:bg-[#effbf8] disabled:opacity-60" />
+                <Button onClick={saveConsultation} disabled={saving} className="px-5"><Save className="h-4 w-4" />{saving ? "Finalizando..." : "Finalizar consulta"}</Button>
               </div>
             </div>
           </div>
@@ -695,56 +525,22 @@ function StepContent({
   );
 }
 
-function StepSection({
-  eyebrow,
-  title,
-  description,
-  children
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Section eyebrow={eyebrow} title={title} description={description}>
-      {children}
-    </Section>
-  );
+function StepSection({ eyebrow, title, description, children }: { eyebrow: string; title: string; description: string; children: React.ReactNode; }) {
+  return <Section eyebrow={eyebrow} title={title} description={description}>{children}</Section>;
 }
 
-function FieldGrid({
-  title,
-  fields,
-  updateField
-}: {
-  title: string;
-  fields: ReadonlyArray<readonly [string, string, number, string]>;
-  updateField: (path: string, value: string) => void;
-}) {
+function FieldGrid({ title, fields, updateField }: { title: string; fields: ReadonlyArray<readonly [string, string, number, string]>; updateField: (path: string, value: string) => void; }) {
   return (
     <div className="rounded-3xl border border-line bg-white p-5">
       <p className="mb-4 text-sm font-semibold text-ink">{title}</p>
       <div className="grid gap-4 md:grid-cols-2">
-        {fields.map(([label, path, value, placeholder]) => (
-          <InputField key={path} label={label} value={String(value)} placeholder={placeholder} tooltip="Campo numérico usado nos cálculos automáticos." onChange={(nextValue) => updateField(path, nextValue)} />
-        ))}
+        {fields.map(([label, path, value, placeholder]) => <InputField key={path} label={label} value={String(value)} placeholder={placeholder} tooltip="Campo numérico usado nos cálculos automáticos." onChange={(nextValue) => updateField(path, nextValue)} />)}
       </div>
     </div>
   );
 }
 
-function BinaryChoiceField({
-  label,
-  value,
-  hint,
-  onChange
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  onChange: (value: string) => void;
-}) {
+function BinaryChoiceField({ label, value, hint, onChange }: { label: string; value: string; hint: string; onChange: (value: string) => void; }) {
   return (
     <fieldset className="rounded-3xl border border-line bg-white p-4">
       <legend className="px-1 text-sm font-medium text-ink">{label}</legend>
@@ -752,24 +548,9 @@ function BinaryChoiceField({
       <div className="mt-4 grid grid-cols-2 gap-3">
         {binaryChoiceOptions.map((option) => {
           const checked = value === option.value;
-
           return (
-            <label
-              key={option.value}
-              className={`flex cursor-pointer items-center justify-center rounded-2xl border px-4 py-3 text-sm font-medium transition ${
-                checked
-                  ? "border-moss bg-[#effbf8] text-moss shadow-sm"
-                  : "border-line bg-white text-muted hover:border-moss/30 hover:text-ink"
-              }`}
-            >
-              <input
-                type="radio"
-                name={label}
-                value={option.value}
-                checked={checked}
-                onChange={(event) => onChange(event.target.value)}
-                className="sr-only"
-              />
+            <label key={option.value} className={`flex cursor-pointer items-center justify-center rounded-2xl border px-4 py-3 text-sm font-medium transition ${checked ? "border-moss bg-[#effbf8] text-moss shadow-sm" : "border-line bg-white text-muted hover:border-moss/30 hover:text-ink"}`}>
+              <input type="radio" name={label} value={option.value} checked={checked} onChange={(event) => onChange(event.target.value)} className="sr-only" />
               {option.label}
             </label>
           );
@@ -784,9 +565,7 @@ function ListCard({ title, items }: { title: string; items: string[] }) {
     <div className="rounded-3xl border border-line bg-white p-5">
       <p className="text-sm font-semibold text-ink">{title}</p>
       <div className="mt-3 space-y-2 text-sm leading-6 text-muted">
-        {items.map((item) => (
-          <p key={item}>• {item}</p>
-        ))}
+        {items.map((item) => <p key={item}>• {item}</p>)}
       </div>
     </div>
   );

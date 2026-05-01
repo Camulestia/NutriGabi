@@ -11,6 +11,7 @@ type InputProps = {
   placeholder?: string;
   hint?: string;
   error?: string;
+  warning?: string;
   tooltip?: string;
   className?: string;
 };
@@ -24,6 +25,7 @@ export function InputField({
   placeholder,
   hint,
   error,
+  warning,
   tooltip,
   className
 }: InputProps) {
@@ -64,6 +66,11 @@ export function InputField({
         <span className="mt-2 flex items-center gap-2 text-xs text-rose-600">
           <AlertCircle className="h-3.5 w-3.5" />
           {error}
+        </span>
+      ) : warning ? (
+        <span className="mt-2 flex items-center gap-2 text-xs text-amber-600">
+          <AlertCircle className="h-3.5 w-3.5" />
+          {warning}
         </span>
       ) : hint ? (
         <span className="mt-2 block text-xs text-muted">{hint}</span>

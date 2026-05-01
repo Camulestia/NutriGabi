@@ -1,7 +1,10 @@
 import OpenAI from "openai";
 
 import { calculateAnthropometricMetrics } from "@/lib/anthropometry";
-import { AIInterpretation, Consultation, Patient } from "@/lib/types";
+import { findFoodByName, foodDatabase } from "@/lib/meal-plan/food-database";
+import { calculateItemFromFood } from "@/lib/meal-plan/macros";
+import { buildDefaultMeals } from "@/lib/meal-plan/templates";
+import { AIInterpretation, Consultation, MealPlan, MealPlanStrategy, Patient } from "@/lib/types";
 
 function buildFallbackInterpretation(patient: Patient, consultation: Consultation): AIInterpretation {
   const metrics = calculateAnthropometricMetrics(consultation.anthropometry);
@@ -103,4 +106,223 @@ export async function generateAiInterpretation(patient: Patient, consultation: C
     ...parsed,
     generatedAt: new Date().toISOString()
   } as AIInterpretation;
+}
+
+function buildFallbackMealPlan({
+  patient,
+  consultation,
+  targetCalories,
+  targetProtein,
+  targetCarbs,
+  targetFat,
+  strategy,
+  numberOfMeals
+}: {
+  patient: Patient;
+  consultation?: Consultation | null;
+  targetCalories: number;
+  targetProtein: number;
+  targetCarbs: number;
+  targetFat: number;
+  strategy: MealPlanStrategy;
+  numberOfMeals: number;
+}): MealPlan {
+  const templates = buildDefaultMeals().slice(0, Math.max(3, Math.min(numberOfMeals, 6)));
+  const baseItems = [
+    calculateItemFromFood("food-egg", "Ovo", 2, "unidade"),
+    calculateItemFromFood("food-banana", "Banana", 1, "unidade"),
+    calculateItemFromFood("food-chicken", "Frango grelhado", 140, "g"),
+    calculateItemFromFood("food-rice", "Arroz cozido", 120, "g"),
+    calculateItemFromFood("food-beans", "Feijão cozido", 100, "g"),
+    calculateItemFromFood("food-yogurt", "Iogurte natural", 1, "pote"),
+    calculateItemFromFood("food-whey", "Whey protein", 1, "scoop"),
+    calculateItemFromFood("food-sweet-potato", "Batata doce", 140, "g")
+  ];
+
+  const meals = templates.map((meal, index) => ({
+    ...meal,
+    items:
+      index === 0
+        ? [baseItems[0], baseItems[1]]
+        : index === 1
+          ? [baseItems[5]]
+          : index === 2
+            ? [baseItems[2], baseItems[3], baseItems[4]]
+            : index === 3
+              ? [baseItems[6], baseItems[1]]
+              : [baseItems[2], baseItems[7]],
+    notes: index === 0 ? "Manter preparo prático e boa proteína logo cedo." : ""
+  }));
+
+  return {
+    id: `plan-${Date.now()}`,
+    patientId: patient.id,
+    consultationId: consultation?.id,
+    title: `Plano alimentar - ${strategy}`,
+    goal: consultation?.objective || patient.mainObjective,
+    strategy,
+    status: "rascunho",
+    targetCalories,
+    targetProtein,
+    targetCarbs,
+    targetFat,
+    meals,
+    notes: patient.foodNotes || "Plano gerado com auxílio de IA para revisão profissional.",
+    internalNotes: consultation?.conduct || "",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    professionalReviewRequired: true
+  };
+}
+
+export async function generateAiMealPlan({
+  patient,
+  consultation,
+  targetCalories,
+  targetProtein,
+  targetCarbs,
+  targetFat,
+  strategy,
+  numberOfMeals,
+  notes
+}: {
+  patient: Patient;
+  consultation?: Consultation | null;
+  targetCalories: number;
+  targetProtein: number;
+  targetCarbs: number;
+  targetFat: number;
+  strategy: MealPlanStrategy;
+  numberOfMeals: number;
+  notes?: string;
+}) {
+  if (!process.env.OPENAI_API_KEY) {
+    return buildFallbackMealPlan({ patient, consultation, targetCalories, targetProtein, targetCarbs, targetFat, strategy, numberOfMeals });
+  }
+
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const response = await client.responses.create({
+    model: "gpt-4.1-mini",
+    input: [
+      {
+        role: "system",
+        content:
+          "Voce cria planos alimentares estruturados em JSON para nutricionistas. Nunca prometa cura ou tratamento medico. Respeite alergias, intolerancias, alimentos rejeitados e marque sempre revisao profissional obrigatoria."
+      },
+      {
+        role: "user",
+        content: JSON.stringify({
+          patient,
+          consultation,
+          targets: { targetCalories, targetProtein, targetCarbs, targetFat },
+          strategy,
+          numberOfMeals,
+          notes,
+          foodBase: foodDatabase.map((food) => ({
+            id: food.id,
+            name: food.name,
+            category: food.category,
+            kcalPer100g: food.kcalPer100g,
+            proteinPer100g: food.proteinPer100g,
+            carbsPer100g: food.carbsPer100g,
+            fatPer100g: food.fatPer100g
+          }))
+        })
+      }
+    ],
+    text: {
+      format: {
+        type: "json_schema",
+        name: "meal_plan",
+        schema: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            title: { type: "string" },
+            goal: { type: "string" },
+            generalNotes: { type: "string" },
+            professionalReviewRequired: { type: "boolean" },
+            meals: {
+              type: "array",
+              items: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                  name: { type: "string" },
+                  time: { type: "string" },
+                  notes: { type: "string" },
+                  items: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      additionalProperties: false,
+                      properties: {
+                        food: { type: "string" },
+                        quantity: { type: "number" },
+                        unit: { type: "string" },
+                        notes: { type: "string" }
+                      },
+                      required: ["food", "quantity", "unit", "notes"]
+                    }
+                  }
+                },
+                required: ["name", "time", "notes", "items"]
+              }
+            }
+          },
+          required: ["title", "goal", "generalNotes", "professionalReviewRequired", "meals"]
+        }
+      }
+    }
+  });
+
+  const parsed = JSON.parse(response.output_text) as {
+    title: string;
+    goal: string;
+    generalNotes: string;
+    professionalReviewRequired: boolean;
+    meals: Array<{
+      name: string;
+      time: string;
+      notes: string;
+      items: Array<{ food: string; quantity: number; unit: string; notes: string }>;
+    }>;
+  };
+
+  return {
+    id: `plan-${Date.now()}`,
+    patientId: patient.id,
+    consultationId: consultation?.id,
+    title: parsed.title,
+    goal: parsed.goal,
+    strategy,
+    status: "rascunho",
+    targetCalories,
+    targetProtein,
+    targetCarbs,
+    targetFat,
+    meals: parsed.meals.map((meal, mealIndex) => ({
+      id: `meal-${Date.now()}-${mealIndex}`,
+      name: meal.name,
+      time: meal.time,
+      notes: meal.notes,
+      order: mealIndex,
+      items: meal.items.map((item, itemIndex) => {
+        const matchedFood = findFoodByName(item.food);
+        const calculated = calculateItemFromFood(matchedFood?.id, matchedFood?.name ?? item.food, item.quantity, item.unit);
+        return {
+          ...calculated,
+          id: `item-${Date.now()}-${mealIndex}-${itemIndex}`,
+          name: matchedFood?.name ?? item.food,
+          notes: item.notes,
+          substitutions: []
+        };
+      })
+    })),
+    notes: parsed.generalNotes,
+    internalNotes: notes ?? "",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    professionalReviewRequired: parsed.professionalReviewRequired
+  } satisfies MealPlan;
 }

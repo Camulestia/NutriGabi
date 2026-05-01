@@ -1,10 +1,9 @@
-import { NextResponse } from "next/server";
-
+﻿import { jsonUtf8 } from "@/lib/api-response";
 import { createPatient, listPatients } from "@/lib/services/repository";
 import { Patient } from "@/lib/types";
 
 export async function GET() {
-  return NextResponse.json(await listPatients());
+  return jsonUtf8(await listPatients());
 }
 
 export async function POST(request: Request) {
@@ -14,5 +13,5 @@ export async function POST(request: Request) {
     ...payload
   });
 
-  return NextResponse.json(created, { status: 201 });
+  return jsonUtf8(created, { status: 201 });
 }

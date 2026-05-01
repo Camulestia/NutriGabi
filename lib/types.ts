@@ -1,4 +1,4 @@
-export type Severity = "normal" | "leve" | "moderado" | "grave";
+﻿export type Severity = "normal" | "leve" | "moderado" | "grave";
 
 export type Anthropometry = {
   currentWeight: number;
@@ -112,6 +112,104 @@ export type Consultation = {
   nextVisitPriorities?: string;
 };
 
+export type MealPlanStatus = "rascunho" | "ativo" | "arquivado";
+
+export type MealPlanStrategy =
+  | "emagrecimento"
+  | "hipertrofia"
+  | "manutenção"
+  | "performance"
+  | "saúde metabólica"
+  | "saúde intestinal"
+  | "reeducação alimentar";
+
+export type FoodTag =
+  | "proteína"
+  | "carboidrato"
+  | "gordura"
+  | "vegetal"
+  | "fruta"
+  | "laticínio"
+  | "bebida"
+  | "fibra"
+  | "leguminosa";
+
+export type Food = {
+  id: string;
+  name: string;
+  category: string;
+  kcalPer100g: number;
+  proteinPer100g: number;
+  carbsPer100g: number;
+  fatPer100g: number;
+  fiberPer100g?: number;
+  tags: FoodTag[];
+  commonUnits?: Record<string, number>;
+};
+
+export type MacroDifference = {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+export type Substitution = {
+  originalFood: string;
+  substituteFood: string;
+  originalQuantity: number;
+  substituteQuantity: number;
+  unit: string;
+  macroDifference: MacroDifference;
+  reason: string;
+};
+
+export type MealItem = {
+  id: string;
+  foodId?: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fibers?: number;
+  group: string;
+  tags: FoodTag[];
+  notes: string;
+  substitutions: Substitution[];
+};
+
+export type Meal = {
+  id: string;
+  name: string;
+  time: string;
+  items: MealItem[];
+  notes: string;
+  order: number;
+};
+
+export type MealPlan = {
+  id: string;
+  patientId: string;
+  consultationId?: string;
+  title: string;
+  goal: string;
+  strategy: MealPlanStrategy;
+  status: MealPlanStatus;
+  targetCalories: number;
+  targetProtein: number;
+  targetCarbs: number;
+  targetFat: number;
+  meals: Meal[];
+  notes: string;
+  internalNotes: string;
+  createdAt: string;
+  updatedAt: string;
+  professionalReviewRequired: boolean;
+};
+
 export type Patient = {
   id: string;
   name: string;
@@ -126,6 +224,12 @@ export type Patient = {
   medications: string;
   supplements: string;
   foodRestrictions: string;
+  preferredFoods: string[];
+  rejectedFoods: string[];
+  allergies: string[];
+  intolerances: string[];
+  culturalPreferences: string;
+  foodNotes: string;
   notes: string;
   consultations: Consultation[];
   reports: {
@@ -173,4 +277,5 @@ export type ScheduleItem = {
   reason: string;
   type: ScheduleType;
   status: ScheduleStatus;
+  notes?: string;
 };

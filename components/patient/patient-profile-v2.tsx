@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Bell, BrainCircuit, FileText, ShieldAlert } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, BrainCircuit, CheckCircle2, FileText, PencilLine, ShieldAlert, UtensilsCrossed } from "lucide-react";
 
 import { EvolutionChartV2 } from "@/components/charts/evolution-chart-v2";
 import { ReportPdfDownload } from "@/components/report/report-pdf";
@@ -21,9 +21,10 @@ type Props = {
   }>;
   evolutionData: EvolutionPoint[];
   alertItems: Array<{ label: string; tone: "mint" | "amber" | "rose" }>;
+  showUpdatedFeedback?: boolean;
 };
 
-export function PatientProfileV2({ patient, latest, history, evolutionData, alertItems }: Props) {
+export function PatientProfileV2({ patient, latest, history, evolutionData, alertItems, showUpdatedFeedback }: Props) {
   return (
     <div className="space-y-6">
       <Card className="p-8">
@@ -45,16 +46,41 @@ export function PatientProfileV2({ patient, latest, history, evolutionData, aler
             </div>
           </div>
 
-          <Link
-            href={`/patients/${patient.id}/consultations/new`}
-            aria-label={`Iniciar nova avaliação para ${patient.name}`}
-            className={buttonStyles({ className: "px-5 py-3" })}
-          >
-            Nova avaliação
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href={`/patients/${patient.id}/edit`}
+              aria-label={`Editar dados de ${patient.name}`}
+              className={buttonStyles({ variant: "secondary", className: "px-5 py-3" })}
+            >
+              <PencilLine className="h-4 w-4" />
+              Editar dados
+            </Link>
+            <Link
+              href={`/patients/${patient.id}/consultations/new`}
+              aria-label={`Iniciar nova avaliação para ${patient.name}`}
+              className={buttonStyles({ className: "px-5 py-3" })}
+            >
+              Nova avaliação
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href={`/patients/${patient.id}/meal-plans`}
+              aria-label={`Abrir planejamento alimentar de ${patient.name}`}
+              className={buttonStyles({ variant: "secondary", className: "px-5 py-3" })}
+            >
+              <UtensilsCrossed className="h-4 w-4" />
+              Planejamento alimentar
+            </Link>
+          </div>
         </div>
       </Card>
+
+      {showUpdatedFeedback ? (
+        <div className="flex items-center gap-2 rounded-2xl border border-[#caece6] bg-[#effbf8] px-4 py-3 text-sm text-[#0f766e]">
+          <CheckCircle2 className="h-4 w-4" />
+          Dados atualizados com sucesso.
+        </div>
+      ) : null}
 
       {latest ? (
         <div className="grid gap-4 lg:grid-cols-4">
@@ -78,6 +104,23 @@ export function PatientProfileV2({ patient, latest, history, evolutionData, aler
                 <ProfileItem label="Suplementos" value={patient.supplements} />
                 <ProfileItem label="Restrições alimentares" value={patient.foodRestrictions} />
                 <ProfileItem label="Observações gerais" value={patient.notes} />
+              </div>
+            </Section>
+          </Card>
+
+          <Card>
+            <Section
+              eyebrow="Preferências e restrições alimentares"
+              title="Base persistente para novos planos"
+              description="Essas informações acompanham a IA, as substituições e todo novo planejamento alimentar."
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                <ProfileItem label="Alimentos indispensáveis" value={patient.preferredFoods.join(", ")} />
+                <ProfileItem label="Alimentos não aceitos" value={patient.rejectedFoods.join(", ")} />
+                <ProfileItem label="Alergias alimentares" value={patient.allergies.join(", ")} />
+                <ProfileItem label="Intolerâncias alimentares" value={patient.intolerances.join(", ")} />
+                <ProfileItem label="Preferências culturais/religiosas" value={patient.culturalPreferences} />
+                <ProfileItem label="Observações alimentares importantes" value={patient.foodNotes} />
               </div>
             </Section>
           </Card>

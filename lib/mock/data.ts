@@ -1,4 +1,4 @@
-import { Consultation, Patient } from "@/lib/types";
+﻿import { Consultation, MealPlan, Patient } from "@/lib/types";
 
 const baseConsultations: Consultation[] = [
   {
@@ -211,6 +211,12 @@ export const mockPatients: Patient[] = [
     medications: "Metformina 500mg 2x/dia",
     supplements: "Whey protein e vitamina D eventual",
     foodRestrictions: "Redução de lactose",
+    preferredFoods: ["iogurte", "frango", "banana"],
+    rejectedFoods: ["fígado"],
+    allergies: [],
+    intolerances: ["lactose"],
+    culturalPreferences: "",
+    foodNotes: "Prefere refeições práticas para levar ao trabalho e lanches portáteis.",
     notes: "Paciente engajada, prefere orientações práticas para rotina de trabalho.",
     consultations: baseConsultations,
     reports: [
@@ -236,8 +242,135 @@ export const mockPatients: Patient[] = [
     medications: "Nega",
     supplements: "Creatina 5g/dia",
     foodRestrictions: "Nenhuma",
+    preferredFoods: ["ovo", "frango", "arroz"],
+    rejectedFoods: [],
+    allergies: [],
+    intolerances: [],
+    culturalPreferences: "",
+    foodNotes: "Treina muito cedo e costuma comer melhor no almoço e no jantar.",
     notes: "Treina cedo.",
     consultations: [],
     reports: []
+  }
+];
+
+export const mockMealPlans: MealPlan[] = [
+  {
+    id: "plan-001",
+    patientId: "pat-001",
+    consultationId: "cons-002",
+    title: "Plano alimentar - rotina de trabalho",
+    goal: "Reduzir gordura corporal com melhor distribuição proteica durante o dia",
+    strategy: "emagrecimento",
+    status: "ativo",
+    targetCalories: 1750,
+    targetProtein: 130,
+    targetCarbs: 175,
+    targetFat: 58,
+    meals: [
+      {
+        id: "meal-001",
+        name: "Café da manhã",
+        time: "07:00",
+        order: 0,
+        notes: "Priorizar preparo rápido.",
+        items: [
+          {
+            id: "item-001",
+            foodId: "food-egg",
+            name: "Ovo",
+            quantity: 2,
+            unit: "unidade",
+            calories: 143,
+            protein: 13,
+            carbs: 0.7,
+            fat: 9.5,
+            fibers: 0,
+            group: "Proteínas",
+            tags: ["proteína", "gordura"],
+            notes: "",
+            substitutions: []
+          },
+          {
+            id: "item-002",
+            foodId: "food-bread",
+            name: "Pão francês",
+            quantity: 1,
+            unit: "unidade",
+            calories: 150,
+            protein: 4,
+            carbs: 29,
+            fat: 1.6,
+            fibers: 1.2,
+            group: "Panificados",
+            tags: ["carboidrato"],
+            notes: "",
+            substitutions: []
+          }
+        ]
+      },
+      {
+        id: "meal-002",
+        name: "Almoço",
+        time: "12:30",
+        order: 1,
+        notes: "",
+        items: [
+          {
+            id: "item-003",
+            foodId: "food-rice",
+            name: "Arroz cozido",
+            quantity: 120,
+            unit: "g",
+            calories: 153.6,
+            protein: 3,
+            carbs: 33.7,
+            fat: 0.4,
+            fibers: 1.9,
+            group: "Cereais e tubérculos",
+            tags: ["carboidrato"],
+            notes: "",
+            substitutions: []
+          },
+          {
+            id: "item-004",
+            foodId: "food-beans",
+            name: "Feijão cozido",
+            quantity: 100,
+            unit: "g",
+            calories: 76,
+            protein: 4.8,
+            carbs: 13.6,
+            fat: 0.5,
+            fibers: 8.5,
+            group: "Leguminosas",
+            tags: ["carboidrato", "proteína", "fibra", "leguminosa"],
+            notes: "",
+            substitutions: []
+          },
+          {
+            id: "item-005",
+            foodId: "food-chicken",
+            name: "Frango grelhado",
+            quantity: 140,
+            unit: "g",
+            calories: 231,
+            protein: 43.4,
+            carbs: 0,
+            fat: 5,
+            fibers: 0,
+            group: "Proteínas",
+            tags: ["proteína"],
+            notes: "",
+            substitutions: []
+          }
+        ]
+      }
+    ],
+    notes: "Plano inicial com foco em praticidade e saciedade.",
+    internalNotes: "Revisar lanche da tarde na próxima consulta.",
+    createdAt: "2026-04-18T15:00:00.000Z",
+    updatedAt: "2026-04-18T15:00:00.000Z",
+    professionalReviewRequired: true
   }
 ];
