@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  createdAt DateTime  @default(now())
+  patients  Patient[]
+}
+
+model Patient {
+  id               String         @id @default(cuid())
+  userId           String
+  name             String
+  birthDate        DateTime
+  sex              String
+  phone            String
+  email            String
+  profession       String
+  mainObjective    String
+  chiefComplaint   String
+  clinicalHistory  String
+  medications      String
+  supplements      String
+  foodRestrictions String
+  notes            String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  user             User           @relation(fields: [userId], references: [id])
+  consultations    Consultation[]
+  reports          Report[]
+}
+
+model Consultation {
+  id                    String           @id @default(cuid())
+  patientId             String
+  visitReason           String?
+  objective             String
+  chiefComplaint        String
+  anamnesis             Json
+  anthropometry         Json
+  semiology             Json
+  bioimpedance          Json
+  labExam               Json
+  aiInterpretation      AIInterpretation?
+  professionalDiagnosis String
+  conduct               String
+  goals                 String
+  followUp              String
+  patientNotes          String?
+  internalNotes         String?
+  nextVisitPriorities   String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  patient               Patient          @relation(fields: [patientId], references: [id])
+}
+
+model AIInterpretation {
+  id                         String       @id @default(cuid())
+  consultationId             String       @unique
+  summary                    String
+  keyFindings                Json
+  nutritionalRisks           Json
+  possibleDeficiencies       Json
+  correlations               Json
+  attentionPoints            Json
+  conductSuggestions         Json
+  nextConsultationSuggestions Json
+  createdAt                  DateTime     @default(now())
+  consultation               Consultation @relation(fields: [consultationId], references: [id])
+}
+
+model Report {
+  id             String   @id @default(cuid())
+  patientId      String
+  consultationId String
+  title          String
+  createdAt      DateTime @default(now())
+  patient        Patient  @relation(fields: [patientId], references: [id])
+}
