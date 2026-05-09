@@ -178,11 +178,11 @@ export function TodaySchedule({
 
         {!canManageSchedule ? (
           <div className="mt-5 rounded-3xl border border-[#caece6] bg-[#f8fdfc] p-4 text-sm text-muted">
-            A agenda completa faz parte do plano Pro. Você ainda pode visualizar o histórico do dia e fazer upgrade quando quiser.
+            A agenda completa faz parte do plano Profissional. Você ainda pode visualizar o histórico do dia e atualizar seu plano quando quiser.
             <div className="mt-3">
               <Link href="/billing" className={buttonStyles({ className: "px-4 py-2.5" })}>
                 <Sparkles className="h-4 w-4" />
-                Fazer upgrade
+                Atualizar plano
               </Link>
             </div>
           </div>

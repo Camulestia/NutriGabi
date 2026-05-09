@@ -12,11 +12,17 @@ import { cn } from "@/lib/utils";
 const items = [
   { href: "/", label: "Visão geral", icon: LayoutDashboard },
   { href: "/patients", label: "Pacientes", icon: Users },
-  { href: "/billing", label: "Billing", icon: CreditCard },
+  { href: "/billing", label: "Assinatura", icon: CreditCard },
   { href: "/settings", label: "Configurações", icon: Settings }
 ];
 
 const shelllessRoutes = ["/sign-in", "/sign-up", "/privacy", "/terms", "/onboarding"];
+
+const planLabels: Record<string, string> = {
+  free: "Gratuito",
+  pro: "Profissional",
+  clinic: "Clínica"
+};
 
 export function AppShellV2({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -122,7 +128,7 @@ export function AppShellV2({ children }: { children: React.ReactNode }) {
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-moss text-sm font-semibold text-white">{initials}</div>
                     <div>
                       <p className="text-sm font-medium text-ink">{displayName}</p>
-                      <p className="text-xs text-muted">{email}{billing ? ` • ${billing.plan.toUpperCase()}` : ""}</p>
+                      <p className="text-xs text-muted">{email}{billing ? ` • ${planLabels[billing.plan] ?? billing.plan}` : ""}</p>
                     </div>
                   </div>
 

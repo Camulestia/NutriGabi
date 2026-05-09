@@ -22,6 +22,22 @@ const specialtyOptions: Array<{ label: string; value: SpecialtyFocus | "" }> = [
   { label: "Outro", value: "outro" }
 ];
 
+const planLabels: Record<string, string> = {
+  free: "Gratuito",
+  pro: "Profissional",
+  clinic: "Clínica"
+};
+
+const statusLabels: Record<string, string> = {
+  active: "Ativa",
+  inactive: "Inativa",
+  canceled: "Cancelada",
+  canceling: "Cancelamento agendado",
+  past_due: "Pagamento pendente",
+  unpaid: "Não paga",
+  trialing: "Em teste"
+};
+
 export function SettingsForm({
   settings,
   billing,
@@ -155,17 +171,17 @@ export function SettingsForm({
 
               <div className="space-y-6">
                 <Card className="p-5">
-                  <Section eyebrow="Conta" title="Assinatura e acesso" description="Resumo rápido do seu plano atual e acesso à área de billing.">
+                  <Section eyebrow="Conta" title="Assinatura e acesso" description="Resumo rápido do seu plano atual e acesso à área de assinatura.">
                     <div className="space-y-4">
                       <InfoRow label="E-mail" value={form.email} />
-                      <InfoRow label="Plano atual" value={billing.plan.toUpperCase()} />
-                      <InfoRow label="Status" value={billing.status} />
+                      <InfoRow label="Plano atual" value={planLabels[billing.plan] ?? billing.plan} />
+                      <InfoRow label="Status da assinatura" value={statusLabels[billing.status] ?? billing.status} />
                       <InfoRow
                         label="Próxima cobrança"
                         value={billing.currentPeriodEnd ? formatDate(billing.currentPeriodEnd) : "Sem cobrança ativa"}
                       />
                       <Link href="/billing" className="inline-flex items-center rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink transition hover:border-moss hover:text-moss">
-                        Ir para billing
+                        Ir para assinatura
                       </Link>
                     </div>
                   </Section>

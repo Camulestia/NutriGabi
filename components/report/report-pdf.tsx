@@ -257,9 +257,9 @@ export function ReportPdfDownload({
             "inline-flex items-center justify-center rounded-full border border-line bg-white px-4 py-2.5 text-sm font-medium text-ink transition hover:border-moss/30 hover:bg-[#effbf8]"
           }
         >
-          Fazer upgrade para PDF
+          Atualizar plano para liberar PDF
         </Link>
-        <p className="text-xs text-[#b45309]">Relatórios em PDF fazem parte do plano Pro.</p>
+        <p className="text-xs text-[#b45309]">Relatórios em PDF fazem parte do plano Profissional.</p>
       </div>
     );
   }

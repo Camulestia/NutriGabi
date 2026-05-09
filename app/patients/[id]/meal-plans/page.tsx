@@ -33,16 +33,16 @@ export default async function MealPlansPage({
     return (
       <Card className="p-8">
         <Section
-          eyebrow="Plano Pro"
+          eyebrow="Plano Profissional"
           title="Planejamento alimentar disponível no upgrade"
-          description="O prontuário do paciente continua intacto. Faça upgrade para liberar planejamento alimentar, substituições inteligentes e PDF do plano."
+          description="O prontuário do paciente continua intacto. Atualize o plano para liberar planejamento alimentar, substituições inteligentes e PDF do plano."
         >
           <div className="flex flex-wrap gap-3">
             <Link href={`/patients/${patient.id}`} className={buttonStyles({ variant: "secondary" })}>
               Voltar ao perfil
             </Link>
             <Link href="/billing" className={buttonStyles({ className: "px-5 py-3" })}>
-              Fazer upgrade
+              Atualizar plano
             </Link>
           </div>
         </Section>
