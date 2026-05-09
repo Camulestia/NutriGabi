@@ -14,6 +14,21 @@ export async function POST(request: Request) {
     const session = await createCheckoutSessionForCurrentUser(plan, new URL(request.url).origin);
     return jsonUtf8(session);
   } catch (error) {
+    if (error && typeof error === "object" && "message" in error) {
+      const stripeLikeError = error as { message?: string; type?: string; code?: string };
+      console.error("Stripe checkout error", {
+        message: stripeLikeError.message,
+        type: stripeLikeError.type,
+        code: stripeLikeError.code
+      });
+    } else {
+      console.error("Stripe checkout error", {
+        message: "Unknown error",
+        type: undefined,
+        code: undefined
+      });
+    }
+
     return handleApiError(error, {
       fallbackKey: "billingProcess",
       context: { action: "billing.checkout", route: "/api/billing/checkout", status: "failed" }

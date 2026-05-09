@@ -118,6 +118,31 @@ function getFeatureMessage(feature: FeatureKey) {
   return featureMessages[feature];
 }
 
+function validateStripeCheckoutConfiguration(plan: Extract<UserPlan, "pro" | "clinic">, origin?: string) {
+  const targetPriceId = getStripePlanPriceId(plan);
+  const appUrl = resolveAppUrl(origin);
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.error("Missing STRIPE_SECRET_KEY");
+    throw new BillingFeatureError("A cobrança ainda não está configurada neste ambiente.", "BILLING_NOT_CONFIGURED", 503);
+  }
+
+  if (!targetPriceId) {
+    console.error(`Missing ${plan === "pro" ? "STRIPE_PRO_PRICE_ID" : "STRIPE_CLINIC_PRICE_ID"}`);
+    throw new BillingFeatureError("O preço do plano ainda não foi configurado no Stripe.", "BILLING_NOT_CONFIGURED", 503);
+  }
+
+  if (!process.env.APP_URL && !process.env.NEXT_PUBLIC_APP_URL && !origin) {
+    console.error("Missing APP_URL");
+    throw new BillingFeatureError("A URL do aplicativo ainda não está configurada para o pagamento.", "APP_URL_MISSING", 503);
+  }
+
+  return {
+    targetPriceId,
+    appUrl
+  };
+}
+
 function getPlanForPriceId(priceId?: string | null): UserPlan {
   if (priceId && process.env.STRIPE_CLINIC_PRICE_ID && priceId === process.env.STRIPE_CLINIC_PRICE_ID) {
     return "clinic";
@@ -312,10 +337,7 @@ export async function createCheckoutSessionForCurrentUser(plan: Extract<UserPlan
         throw new BillingFeatureError("Stripe não configurado no ambiente.", "BILLING_NOT_CONFIGURED", 503);
       }
 
-      const targetPriceId = getStripePlanPriceId(plan);
-      if (!targetPriceId) {
-        throw new BillingFeatureError("O preço do plano ainda não foi configurado no Stripe.", "BILLING_NOT_CONFIGURED", 503);
-      }
+      const { targetPriceId, appUrl } = validateStripeCheckoutConfiguration(plan, origin);
 
       const ensured = await ensureStripeCustomerForCurrentUser();
       const stripeCustomerId = "stripeCustomerId" in (ensured ?? {}) ? ensured?.stripeCustomerId : null;
@@ -327,8 +349,8 @@ export async function createCheckoutSessionForCurrentUser(plan: Extract<UserPlan
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer: stripeCustomerId,
-        success_url: `${resolveAppUrl(origin)}/billing?checkout=success`,
-        cancel_url: `${resolveAppUrl(origin)}/billing?checkout=canceled`,
+        success_url: `${appUrl}/billing?checkout=success`,
+        cancel_url: `${appUrl}/billing?checkout=canceled`,
         line_items: [
           {
             price: targetPriceId,

@@ -26,12 +26,12 @@ export function getStripeClient() {
 export function getStripePlanPriceId(plan: "pro" | "clinic") {
   const map = {
     pro: process.env.STRIPE_PRO_PRICE_ID || process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID,
-    clinic: process.env.STRIPE_CLINIC_PRICE_ID
+    clinic: process.env.STRIPE_CLINIC_PRICE_ID || process.env.NEXT_PUBLIC_STRIPE_CLINIC_PRICE_ID
   } as const;
 
   return map[plan] ?? null;
 }
 
 export function resolveAppUrl(origin?: string) {
-  return process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || origin || "http://localhost:3000";
+  return process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || origin || "https://nutri-gabi.vercel.app";
 }
