@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { ConsultationWizardV3 } from "@/components/consultation/consultation-wizard-v3";
+import { requireUser } from "@/lib/clerk-auth";
+import { requireCompletedOnboarding } from "@/lib/onboarding";
 import { getPatientById } from "@/lib/services/repository";
 import { Consultation } from "@/lib/types";
 
@@ -90,6 +92,8 @@ function buildInitialConsultation(patientId: string): Consultation {
 }
 
 export default async function NewConsultationPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireUser();
+  await requireCompletedOnboarding();
   const { id } = await params;
   const patient = await getPatientById(id);
 

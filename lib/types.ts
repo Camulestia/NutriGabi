@@ -210,6 +210,33 @@ export type MealPlan = {
   professionalReviewRequired: boolean;
 };
 
+export type SpecialtyFocus =
+  | "emagrecimento"
+  | "hipertrofia"
+  | "nutrição clínica"
+  | "esportiva"
+  | "comportamento alimentar"
+  | "saúde intestinal"
+  | "outro";
+
+export type UserSettings = {
+  name: string;
+  email: string;
+  plan: UserPlan;
+  crn: string;
+  clinicName: string;
+  professionalPhone: string;
+  clinicLogoUrl: string;
+  specialty: SpecialtyFocus | "";
+  reportSignature: string;
+  defaultReturnInterval: number;
+  defaultConsultationTime: string;
+  defaultPdfFooter: string;
+  locale: "pt-BR";
+  onboardingCompleted: boolean;
+  acceptedTermsAt?: string;
+};
+
 export type Patient = {
   id: string;
   name: string;
@@ -230,6 +257,9 @@ export type Patient = {
   intolerances: string[];
   culturalPreferences: string;
   foodNotes: string;
+  consentToStoreHealthData: boolean;
+  consentDate?: string;
+  deletedAt?: string;
   notes: string;
   consultations: Consultation[];
   reports: {
@@ -278,4 +308,46 @@ export type ScheduleItem = {
   type: ScheduleType;
   status: ScheduleStatus;
   notes?: string;
+};
+
+export type UserPlan = "free" | "pro" | "clinic";
+
+export type SubscriptionStatus =
+  | "inactive"
+  | "incomplete"
+  | "incomplete_expired"
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "unpaid";
+
+export type PlanAccess = {
+  plan: UserPlan;
+  patientLimit: number | null;
+  canUseAdvancedAgenda: boolean;
+  canUseMealPlans: boolean;
+  canExportPdf: boolean;
+  canUseFullReports: boolean;
+};
+
+export type BillingSummary = {
+  plan: UserPlan;
+  status: SubscriptionStatus;
+  currentPeriodEnd?: string | null;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  patientCount: number;
+  patientLimit: number | null;
+  canCreatePatient: boolean;
+  access: PlanAccess;
+};
+
+export type AuditLogEntry = {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
 };

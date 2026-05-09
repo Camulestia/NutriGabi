@@ -217,6 +217,8 @@ export const mockPatients: Patient[] = [
     intolerances: ["lactose"],
     culturalPreferences: "",
     foodNotes: "Prefere refeições práticas para levar ao trabalho e lanches portáteis.",
+    consentToStoreHealthData: true,
+    consentDate: "2026-03-12T10:20:00.000Z",
     notes: "Paciente engajada, prefere orientações práticas para rotina de trabalho.",
     consultations: baseConsultations,
     reports: [
@@ -248,6 +250,7 @@ export const mockPatients: Patient[] = [
     intolerances: [],
     culturalPreferences: "",
     foodNotes: "Treina muito cedo e costuma comer melhor no almoço e no jantar.",
+    consentToStoreHealthData: false,
     notes: "Treina cedo.",
     consultations: [],
     reports: []

@@ -1,7 +1,22 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Bell, BrainCircuit, CheckCircle2, FileText, PencilLine, ShieldAlert, UtensilsCrossed } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bell,
+  BrainCircuit,
+  CheckCircle2,
+  Download,
+  FileText,
+  PencilLine,
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+  UtensilsCrossed
+} from "lucide-react";
 
 import { EvolutionChartV2 } from "@/components/charts/evolution-chart-v2";
 import { ReportPdfDownload } from "@/components/report/report-pdf";
@@ -25,6 +40,67 @@ type Props = {
 };
 
 export function PatientProfileV2({ patient, latest, history, evolutionData, alertItems, showUpdatedFeedback }: Props) {
+  const router = useRouter();
+  const [busyAction, setBusyAction] = useState<"export" | "archive" | null>(null);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const handleExport = async () => {
+    setBusyAction("export");
+    setFeedback(null);
+
+    try {
+      const response = await fetch(`/api/patients/${patient.id}/export`);
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(payload?.message ?? "Não foi possível exportar os dados do paciente.");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `paciente-${patient.name.toLowerCase().replaceAll(" ", "-")}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setFeedback({ type: "success", message: "Exportação concluída com sucesso." });
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message: error instanceof Error ? error.message : "Não foi possível exportar os dados do paciente."
+      });
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleArchive = async () => {
+    const confirmation = window.prompt(`Digite o nome do paciente para confirmar o arquivamento seguro:\n\n${patient.name}`);
+    if (confirmation !== patient.name) {
+      setFeedback({ type: "error", message: "O nome digitado não confere. O paciente não foi arquivado." });
+      return;
+    }
+
+    setBusyAction("archive");
+    setFeedback(null);
+
+    try {
+      const response = await fetch(`/api/patients/${patient.id}`, { method: "DELETE" });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(payload?.message ?? "Não foi possível arquivar o paciente.");
+      }
+
+      router.refresh();
+      router.push("/patients?archived=1");
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message: error instanceof Error ? error.message : "Não foi possível arquivar o paciente."
+      });
+      setBusyAction(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="p-8">
@@ -82,6 +158,41 @@ export function PatientProfileV2({ patient, latest, history, evolutionData, aler
         </div>
       ) : null}
 
+      {feedback ? (
+        <div
+          className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm ${
+            feedback.type === "success"
+              ? "border-[#caece6] bg-[#effbf8] text-[#0f766e]"
+              : "border-[#f2d1d5] bg-[#fff1f1] text-[#b42318]"
+          }`}
+        >
+          {feedback.type === "success" ? <CheckCircle2 className="h-4 w-4" /> : <ShieldAlert className="h-4 w-4" />}
+          {feedback.message}
+        </div>
+      ) : null}
+
+      <div
+        className={`flex items-start gap-3 rounded-3xl border px-5 py-4 ${
+          patient.consentToStoreHealthData
+            ? "border-[#caece6] bg-[#effbf8] text-[#0f766e]"
+            : "border-[#f7dbad] bg-[#fff7eb] text-[#b45309]"
+        }`}
+      >
+        {patient.consentToStoreHealthData ? <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" /> : <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />}
+        <div>
+          <p className="text-sm font-semibold">
+            {patient.consentToStoreHealthData
+              ? "Este paciente consentiu com o armazenamento de dados sensíveis de saúde."
+              : "Consentimento de dados sensíveis ainda pendente."}
+          </p>
+          <p className="mt-1 text-sm leading-6 opacity-90">
+            {patient.consentToStoreHealthData && patient.consentDate
+              ? `Consentimento registrado em ${formatDate(patient.consentDate)}.`
+              : "O cadastro continua disponível, mas vale registrar o consentimento assim que possível para manter o prontuário alinhado à LGPD básica."}
+          </p>
+        </div>
+      </div>
+
       {latest ? (
         <div className="grid gap-4 lg:grid-cols-4">
           <MetricCard label="IMC" value={history[0]?.bmi.toFixed(1) ?? "--"} subtitle="Leitura mais recente" tone="mint" />
@@ -96,7 +207,7 @@ export function PatientProfileV2({ patient, latest, history, evolutionData, aler
           <Card>
             <Section eyebrow="Dados cadastrais" title="Informações do prontuário" description="Dados centrais para consulta e acompanhamento do paciente.">
               <div className="grid gap-4 md:grid-cols-2">
-                <ProfileItem label="Contato" value={`${patient.phone} • ${patient.email}`} />
+                <ProfileItem label="Contato" value={`${patient.phone || "Não informado"} • ${patient.email || "Não informado"}`} />
                 <ProfileItem label="Profissão" value={patient.profession} />
                 <ProfileItem label="Queixa principal" value={patient.chiefComplaint} />
                 <ProfileItem label="Histórico clínico" value={patient.clinicalHistory} />
@@ -199,6 +310,28 @@ export function PatientProfileV2({ patient, latest, history, evolutionData, aler
             </Section>
           </Card>
 
+          <Card>
+            <Section
+              eyebrow="Privacidade e dados"
+              title="Ações seguras do prontuário"
+              description="Exporte o histórico completo do paciente ou arquive o prontuário com confirmação."
+            >
+              <div className="flex flex-wrap gap-3">
+                <Button type="button" variant="secondary" onClick={handleExport} disabled={busyAction !== null} aria-label="Exportar dados do paciente">
+                  <Download className="h-4 w-4" />
+                  {busyAction === "export" ? "Exportando..." : "Exportar dados do paciente"}
+                </Button>
+                <Button type="button" variant="ghost" onClick={handleArchive} disabled={busyAction !== null} aria-label="Excluir paciente">
+                  <Trash2 className="h-4 w-4" />
+                  {busyAction === "archive" ? "Arquivando..." : "Excluir paciente"}
+                </Button>
+              </div>
+              <p className="mt-3 text-xs leading-5 text-muted">
+                A exclusão funciona como arquivamento seguro. O paciente sai da lista padrão, mas o histórico clínico continua preservado.
+              </p>
+            </Section>
+          </Card>
+
           {latest ? (
             <Card>
               <Section eyebrow="Relatório" title="Documento profissional" description="Baixe o PDF consolidado da avaliação mais recente.">
@@ -246,4 +379,3 @@ function AlertRow({ label, tone }: { label: string; tone: "mint" | "amber" | "ro
     </div>
   );
 }
-

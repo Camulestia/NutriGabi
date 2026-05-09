@@ -7,81 +7,193 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String    @id @default(cuid())
-  name      String
-  email     String    @unique
-  createdAt DateTime  @default(now())
-  patients  Patient[]
+model UserProfile {
+  id                    String         @id @default(cuid())
+  clerkUserId           String         @unique
+  email                 String
+  name                  String
+  plan                  String         @default("free")
+  crn                   String?
+  clinicName            String?
+  professionalPhone     String?
+  clinicLogoUrl         String?
+  specialty             String?
+  reportSignature       String?
+  defaultReturnInterval Int            @default(30)
+  defaultConsultationTime String       @default("08:00")
+  defaultPdfFooter      String         @default("")
+  locale                String         @default("pt-BR")
+  onboardingCompleted   Boolean        @default(false)
+  acceptedTermsAt       DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  patients              Patient[]
+  consultations         Consultation[]
+  appointments          Appointment[]
+  mealPlans             MealPlan[]
+  reports               Report[]
+  subscription          Subscription?
+  auditLogs             AuditLog[]
 }
 
 model Patient {
-  id               String         @id @default(cuid())
-  userId           String
-  name             String
-  birthDate        DateTime
-  sex              String
-  phone            String
-  email            String
-  profession       String
-  mainObjective    String
-  chiefComplaint   String
-  clinicalHistory  String
-  medications      String
-  supplements      String
-  foodRestrictions String
-  notes            String
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  user             User           @relation(fields: [userId], references: [id])
-  consultations    Consultation[]
-  reports          Report[]
+  id                  String         @id @default(cuid())
+  userId              String
+  name                String
+  birthDate           DateTime?
+  age                 Int?
+  sex                 String         @default("")
+  phone               String         @default("")
+  email               String?
+  profession          String         @default("")
+  mainGoal            String         @default("")
+  mainComplaint       String         @default("")
+  clinicalHistory     String         @default("")
+  medications         String         @default("")
+  supplements         String         @default("")
+  foodRestrictions    String         @default("")
+  notes               String         @default("")
+  preferredFoods      String[]       @default([])
+  rejectedFoods       String[]       @default([])
+  allergies           String[]       @default([])
+  intolerances        String[]       @default([])
+  culturalPreferences String         @default("")
+  foodNotes           String         @default("")
+  consentToStoreHealthData Boolean   @default(false)
+  consentDate         DateTime?
+  deletedAt           DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  user                UserProfile    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  consultations       Consultation[]
+  appointments        Appointment[]
+  mealPlans           MealPlan[]
+  reports             Report[]
+
+  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, deletedAt])
 }
 
 model Consultation {
-  id                    String           @id @default(cuid())
-  patientId             String
-  visitReason           String?
-  objective             String
-  chiefComplaint        String
-  anamnesis             Json
-  anthropometry         Json
-  semiology             Json
-  bioimpedance          Json
-  labExam               Json
-  aiInterpretation      AIInterpretation?
-  professionalDiagnosis String
-  conduct               String
-  goals                 String
-  followUp              String
-  patientNotes          String?
-  internalNotes         String?
-  nextVisitPriorities   String?
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
-  patient               Patient          @relation(fields: [patientId], references: [id])
+  id                     String      @id @default(cuid())
+  userId                 String
+  patientId              String
+  consultationDate       DateTime
+  reason                 String?
+  mainComplaint          String      @default("")
+  mainGoal               String      @default("")
+  anamnesis              Json
+  anthropometry          Json
+  semiology              Json
+  bioimpedance           Json
+  labExams               Json
+  aiInterpretation       Json?
+  professionalAssessment Json
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  user                   UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient                Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  mealPlans              MealPlan[]
+  reports                Report[]
+
+  @@index([userId, patientId])
+  @@index([userId, consultationDate(sort: Desc)])
 }
 
-model AIInterpretation {
-  id                         String       @id @default(cuid())
-  consultationId             String       @unique
-  summary                    String
-  keyFindings                Json
-  nutritionalRisks           Json
-  possibleDeficiencies       Json
-  correlations               Json
-  attentionPoints            Json
-  conductSuggestions         Json
-  nextConsultationSuggestions Json
-  createdAt                  DateTime     @default(now())
-  consultation               Consultation @relation(fields: [consultationId], references: [id])
+model Appointment {
+  id          String      @id @default(cuid())
+  userId      String
+  patientId   String
+  patientName String
+  date        DateTime
+  time        String
+  reason      String?
+  type        String
+  status      String
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient     Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([userId, patientId])
+}
+
+model MealPlan {
+  id                         String        @id @default(cuid())
+  userId                     String
+  patientId                  String
+  consultationId             String?
+  title                      String
+  goal                       String        @default("")
+  strategy                   String
+  status                     String
+  targetCalories             Int
+  targetProtein              Float
+  targetCarbs                Float
+  targetFat                  Float
+  meals                      Json
+  notes                      String        @default("")
+  internalNotes              String        @default("")
+  professionalReviewRequired Boolean       @default(true)
+  createdAt                  DateTime      @default(now())
+  updatedAt                  DateTime      @updatedAt
+  user                       UserProfile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient                    Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  consultation               Consultation? @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  reports                    Report[]
+
+  @@index([userId, patientId])
+  @@index([userId, updatedAt(sort: Desc)])
 }
 
 model Report {
-  id             String   @id @default(cuid())
+  id             String        @id @default(cuid())
+  userId         String
   patientId      String
-  consultationId String
+  consultationId String?
+  mealPlanId     String?
+  type           String
   title          String
-  createdAt      DateTime @default(now())
-  patient        Patient  @relation(fields: [patientId], references: [id])
+  content        Json
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           UserProfile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient        Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  consultation   Consultation? @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  mealPlan       MealPlan?     @relation(fields: [mealPlanId], references: [id], onDelete: SetNull)
+
+  @@index([userId, patientId])
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model Subscription {
+  id                   String      @id @default(cuid())
+  userId               String      @unique
+  stripeCustomerId     String?     @unique
+  stripeSubscriptionId String?     @unique
+  plan                 String      @default("free")
+  status               String      @default("inactive")
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  user                 UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([plan, status])
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+  user       UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, entityType, entityId])
 }

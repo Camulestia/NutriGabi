@@ -1,4 +1,5 @@
 ﻿import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
 
 import "@/app/globals.css";
@@ -20,7 +21,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta charSet="UTF-8" />
       </head>
       <body className={inter.className}>
-        <AppShellV2>{children}</AppShellV2>
+        <ClerkProvider
+          signInUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/sign-in"}
+          signUpUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/sign-up"}
+          signInFallbackRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || "/dashboard"}
+          signUpFallbackRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL || "/onboarding"}
+        >
+          <AppShellV2>{children}</AppShellV2>
+        </ClerkProvider>
       </body>
     </html>
   );

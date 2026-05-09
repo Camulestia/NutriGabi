@@ -2,99 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2, LoaderCircle, PencilLine, UserPlus } from "lucide-react";
+import { AlertCircle, CheckCircle2, LoaderCircle, PencilLine, ShieldCheck, UserPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InputField } from "@/components/ui/input";
 import { Section } from "@/components/ui/section";
+import {
+  getEmailWarning,
+  PatientFormState,
+  textToList,
+  toPatientFormState,
+  validatePatientForm
+} from "@/lib/patient-form";
 import { Patient } from "@/lib/types";
-
-type PatientFormState = {
-  name: string;
-  birthDate: string;
-  sex: "Feminino" | "Masculino" | "Outro";
-  phone: string;
-  email: string;
-  profession: string;
-  mainObjective: string;
-  chiefComplaint: string;
-  clinicalHistory: string;
-  medications: string;
-  supplements: string;
-  foodRestrictions: string;
-  preferredFoods: string;
-  rejectedFoods: string;
-  allergies: string;
-  intolerances: string;
-  culturalPreferences: string;
-  foodNotes: string;
-  notes: string;
-};
-
-const initialState: PatientFormState = {
-  name: "",
-  birthDate: "",
-  sex: "Feminino",
-  phone: "",
-  email: "",
-  profession: "",
-  mainObjective: "",
-  chiefComplaint: "",
-  clinicalHistory: "",
-  medications: "",
-  supplements: "",
-  foodRestrictions: "",
-  preferredFoods: "",
-  rejectedFoods: "",
-  allergies: "",
-  intolerances: "",
-  culturalPreferences: "",
-  foodNotes: "",
-  notes: ""
-};
-
-function listToText(values: string[]) {
-  return values.join(", ");
-}
-
-function textToList(value: string) {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function toFormState(patient?: Patient): PatientFormState {
-  if (!patient) return initialState;
-
-  return {
-    name: patient.name,
-    birthDate: patient.birthDate,
-    sex: patient.sex,
-    phone: patient.phone,
-    email: patient.email,
-    profession: patient.profession,
-    mainObjective: patient.mainObjective,
-    chiefComplaint: patient.chiefComplaint,
-    clinicalHistory: patient.clinicalHistory,
-    medications: patient.medications,
-    supplements: patient.supplements,
-    foodRestrictions: patient.foodRestrictions,
-    preferredFoods: listToText(patient.preferredFoods),
-    rejectedFoods: listToText(patient.rejectedFoods),
-    allergies: listToText(patient.allergies),
-    intolerances: listToText(patient.intolerances),
-    culturalPreferences: patient.culturalPreferences,
-    foodNotes: patient.foodNotes,
-    notes: patient.notes
-  };
-}
-
-function getEmailWarning(email: string) {
-  if (!email.trim()) return null;
-  return email.includes("@") ? null : "E-mail parece inválido. Verifique se contém @.";
-}
+import { formatDate } from "@/lib/utils";
 
 export function PatientIntakeFormV2({
   mode = "create",
@@ -106,25 +28,19 @@ export function PatientIntakeFormV2({
   cancelHref?: string;
 }) {
   const router = useRouter();
-  const [form, setForm] = useState<PatientFormState>(() => toFormState(patient));
+  const [form, setForm] = useState<PatientFormState>(() => toPatientFormState(patient));
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const emailWarning = useMemo(() => getEmailWarning(form.email), [form.email]);
 
-  const handleChange = (field: keyof PatientFormState, value: string) => {
+  const handleChange = (field: keyof PatientFormState, value: string | boolean) => {
     setForm((current) => ({ ...current, [field]: value }));
     if (feedback) setFeedback(null);
   };
 
-  const validateForm = () => {
-    if (!form.name.trim()) return "Informe o nome do paciente.";
-    if (!form.birthDate.trim()) return "Informe a data de nascimento.";
-    return null;
-  };
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const validationError = validateForm();
+    const validationError = validatePatientForm(form);
     if (validationError) {
       setFeedback({ type: "error", message: validationError });
       return;
@@ -142,7 +58,8 @@ export function PatientIntakeFormV2({
           preferredFoods: textToList(form.preferredFoods),
           rejectedFoods: textToList(form.rejectedFoods),
           allergies: textToList(form.allergies),
-          intolerances: textToList(form.intolerances)
+          intolerances: textToList(form.intolerances),
+          consentDate: form.consentToStoreHealthData ? form.consentDate || undefined : undefined
         })
       });
 
@@ -152,7 +69,11 @@ export function PatientIntakeFormV2({
       if (!response.ok || !payload?.id) {
         setFeedback({
           type: "error",
-          message: payload?.message ?? (mode === "create" ? "Não foi possível cadastrar o paciente. Tente novamente." : "Não foi possível atualizar os dados do paciente. Tente novamente.")
+          message:
+            payload?.message ??
+            (mode === "create"
+              ? "Não foi possível cadastrar o paciente. Tente novamente."
+              : "Não foi possível atualizar os dados do paciente. Tente novamente.")
         });
         setSaving(false);
         return;
@@ -160,16 +81,24 @@ export function PatientIntakeFormV2({
 
       setFeedback({
         type: "success",
-        message: mode === "create" ? "Paciente cadastrado com sucesso. Abrindo prontuário..." : "Dados atualizados com sucesso. Voltando ao perfil..."
+        message:
+          mode === "create"
+            ? "Paciente cadastrado com sucesso. Abrindo prontuário..."
+            : "Dados atualizados com sucesso. Voltando ao perfil..."
       });
       setSaving(false);
-      router.refresh();
       router.push(mode === "create" ? `/patients/${payload.id}` : `/patients/${payload.id}?updated=1`);
+      if (mode === "edit") {
+        router.refresh();
+      }
     } catch {
       setSaving(false);
       setFeedback({
         type: "error",
-        message: mode === "create" ? "Não foi possível cadastrar o paciente. Tente novamente." : "Não foi possível atualizar os dados do paciente. Tente novamente."
+        message:
+          mode === "create"
+            ? "Não foi possível cadastrar o paciente. Tente novamente."
+            : "Não foi possível atualizar os dados do paciente. Tente novamente."
       });
     }
   };
@@ -199,7 +128,13 @@ export function PatientIntakeFormV2({
                   Cancelar
                 </Button>
               ) : null}
-              <Button type="submit" className="min-w-[180px]" disabled={saving} aria-label={mode === "create" ? "Cadastrar paciente" : "Salvar alterações do paciente"}>
+              <Button
+                type="submit"
+                className="min-w-[180px]"
+                disabled={saving}
+                aria-label={mode === "create" ? "Cadastrar paciente" : "Salvar alterações do paciente"}
+                data-testid={mode === "create" ? "patient-submit-button" : "patient-save-button"}
+              >
                 {saving ? (
                   <LoaderCircle className="h-4 w-4 animate-spin" />
                 ) : mode === "create" ? (
@@ -224,6 +159,7 @@ export function PatientIntakeFormV2({
               {feedback.message}
             </div>
           ) : null}
+
           <div className="grid gap-4 md:grid-cols-2">
             <InputField label="Nome" value={form.name} placeholder="Nome completo do paciente" error={!form.name.trim() && feedback?.type === "error" ? "Campo obrigatório." : undefined} onChange={(value) => handleChange("name", value)} />
             <InputField label="Data de nascimento" value={form.birthDate} type="date" hint="A idade é calculada automaticamente no perfil." error={!form.birthDate.trim() && feedback?.type === "error" ? "Campo obrigatório." : undefined} onChange={(value) => handleChange("birthDate", value)} />
@@ -256,6 +192,47 @@ export function PatientIntakeFormV2({
                 <option value="Outro">Outro</option>
               </select>
             </label>
+          </div>
+
+          <div className="mt-6 rounded-3xl border border-line bg-[#fbfdfd] p-5">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-sage text-moss">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div className="flex-1 space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-ink">Consentimento para dados sensíveis</p>
+                  <p className="mt-1 text-sm leading-6 text-muted">
+                    Registre se o paciente consentiu com o armazenamento de dados sensíveis de saúde para adequação básica à LGPD.
+                  </p>
+                </div>
+
+                <label className="flex items-start gap-3 rounded-2xl border border-line bg-white px-4 py-3 text-sm text-ink">
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 rounded border-line text-moss focus:ring-moss"
+                    checked={form.consentToStoreHealthData}
+                    onChange={(event) => {
+                      const checked = event.target.checked;
+                      handleChange("consentToStoreHealthData", checked);
+                      if (checked && !form.consentDate) {
+                        handleChange("consentDate", new Date().toISOString().slice(0, 10));
+                      }
+                      if (!checked) {
+                        handleChange("consentDate", "");
+                      }
+                    }}
+                  />
+                  <span>Este paciente consentiu com o armazenamento de dados sensíveis de saúde.</span>
+                </label>
+
+                <p className={`text-xs ${form.consentToStoreHealthData ? "text-[#0f766e]" : "text-[#b45309]"}`}>
+                  {form.consentToStoreHealthData
+                    ? `Consentimento registrado${form.consentDate ? ` em ${formatDate(form.consentDate)}` : ""}.`
+                    : "Cadastro permitido, mas a pendência de consentimento ficará destacada no perfil do paciente."}
+                </p>
+              </div>
+            </div>
           </div>
         </Section>
       </form>

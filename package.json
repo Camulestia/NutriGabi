@@ -6,11 +6,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
+    "test": "vitest run --config vitest.config.mjs",
+    "test:watch": "vitest --config vitest.config.mjs",
+    "test:e2e": "playwright test",
+    "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "node prisma/seed.mjs"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.3.0",
     "@prisma/client": "^6.8.2",
     "@react-pdf/renderer": "^4.3.0",
+    "@sentry/nextjs": "^10.51.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.511.0",
     "next": "^15.3.1",
@@ -18,16 +28,30 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "recharts": "^2.15.3",
+    "stripe": "^22.1.0",
     "tailwind-merge": "^3.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.15.18",
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.4",
+    "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.21",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-testing-library": "^7.16.2",
+    "eslint-plugin-vitest": "^0.5.4",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.3",
+    "prettier": "^3.8.3",
     "prisma": "^6.8.2",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.5"
   }
 }

@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 
 import { PatientProfileV2 } from "@/components/patient/patient-profile-v2";
 import { calculateAnthropometricMetrics } from "@/lib/anthropometry";
+import { requireUser } from "@/lib/clerk-auth";
+import { requireCompletedOnboarding } from "@/lib/onboarding";
 import { getPatientById } from "@/lib/services/repository";
 import { formatDate } from "@/lib/utils";
 
@@ -14,6 +16,8 @@ export default async function PatientPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ updated?: string }>;
 }) {
+  await requireUser();
+  await requireCompletedOnboarding();
   const { id } = await params;
   const { updated } = await searchParams;
   const patient = await getPatientById(id);

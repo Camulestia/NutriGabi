@@ -1,18 +1,60 @@
-"use client";
+﻿"use client";
 
+import { useEffect, useState } from "react";
+import { SignOutButton, useUser } from "@clerk/nextjs";
+import { CreditCard, LayoutDashboard, LogOut, Menu, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Menu, Users } from "lucide-react";
 
+import { BillingSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/", label: "Visão geral", icon: LayoutDashboard },
-  { href: "/patients", label: "Pacientes", icon: Users }
+  { href: "/patients", label: "Pacientes", icon: Users },
+  { href: "/billing", label: "Billing", icon: CreditCard },
+  { href: "/settings", label: "Configurações", icon: Settings }
 ];
+
+const shelllessRoutes = ["/sign-in", "/sign-up", "/privacy", "/terms", "/onboarding"];
 
 export function AppShellV2({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { user } = useUser();
+  const [billing, setBilling] = useState<BillingSummary | null>(null);
+
+  const isAuthRoute = shelllessRoutes.some((route) => pathname.startsWith(route));
+
+  useEffect(() => {
+    if (!user) {
+      setBilling(null);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    fetch("/api/billing", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as BillingSummary;
+      })
+      .then((payload) => {
+        if (payload) {
+          setBilling(payload);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => controller.abort();
+  }, [user]);
+
+  if (isAuthRoute) {
+    return <div className="min-h-screen bg-sand">{children}</div>;
+  }
+
+  const displayName = user?.fullName?.trim() || user?.firstName || "Profissional";
+  const email = user?.primaryEmailAddress?.emailAddress || "Sessão autenticada";
+  const initials = user?.firstName?.[0]?.toUpperCase() || user?.lastName?.[0]?.toUpperCase() || user?.primaryEmailAddress?.emailAddress?.[0]?.toUpperCase() || "N";
 
   return (
     <div className="min-h-screen bg-sand">
@@ -30,9 +72,7 @@ export function AppShellV2({ children }: { children: React.ReactNode }) {
             <nav className="mt-8 space-y-2">
               {items.map((item) => {
                 const Icon = item.icon;
-                const active =
-                  pathname === item.href ||
-                  (item.href === "/patients" && pathname.startsWith("/patients"));
+                const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
 
                 return (
                   <Link
@@ -76,13 +116,27 @@ export function AppShellV2({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 rounded-full border border-line bg-white px-3 py-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-moss text-sm font-semibold text-white">NG</div>
-                <div>
-                  <p className="text-sm font-medium text-ink">Nutricionista Gabi</p>
-                  <p className="text-xs text-muted">Usuário logado</p>
+              {user ? (
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  <div className="flex items-center gap-3 rounded-full border border-line bg-white px-3 py-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-moss text-sm font-semibold text-white">{initials}</div>
+                    <div>
+                      <p className="text-sm font-medium text-ink">{displayName}</p>
+                      <p className="text-xs text-muted">{email}{billing ? ` • ${billing.plan.toUpperCase()}` : ""}</p>
+                    </div>
+                  </div>
+
+                  <SignOutButton>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink transition hover:border-moss hover:text-moss"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Sair</span>
+                    </button>
+                  </SignOutButton>
                 </div>
-              </div>
+              ) : null}
             </div>
           </header>
 

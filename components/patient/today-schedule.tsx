@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock3, PlusCircle, Stethoscope, UserRound, X } from "lucide-react";
+import { CalendarDays, Clock3, PlusCircle, Sparkles, Stethoscope, UserRound, X } from "lucide-react";
 
 import { CalendarPicker } from "@/components/patient/calendar-picker";
 import { Button, buttonStyles } from "@/components/ui/button";
@@ -40,12 +40,17 @@ function createInitialScheduleState(selectedDate: string): ScheduleFormState {
 export function TodaySchedule({
   schedule,
   patients,
+  billingReady,
+  canManageSchedule,
   onScheduleCreated
 }: {
   schedule: ScheduleItem[];
   patients: Patient[];
+  billingReady: boolean;
+  canManageSchedule: boolean;
   onScheduleCreated: (item: ScheduleItem) => void;
 }) {
+  const router = useRouter();
   const todayKey = getLocalDateKey(new Date());
   const [open, setOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -58,24 +63,22 @@ export function TodaySchedule({
     setForm((current) => ({ ...current, date: current.date || selectedDate }));
   }, [selectedDate]);
 
-  const patientOptions = useMemo(
-    () => patients.map((patient) => ({ id: patient.id, label: patient.name })),
-    [patients]
-  );
-
-  const highlightedDates = useMemo(
-    () => Array.from(new Set(schedule.map((item) => normalizeScheduleDateKey(item.date)))),
-    [schedule]
-  );
-
-  const visibleSchedule = useMemo(
-    () => schedule.filter((item) => isSameScheduleDay(item.date, selectedDate)),
-    [schedule, selectedDate]
-  );
-
+  const patientOptions = useMemo(() => patients.map((patient) => ({ id: patient.id, label: patient.name })), [patients]);
+  const highlightedDates = useMemo(() => Array.from(new Set(schedule.map((item) => normalizeScheduleDateKey(item.date)))), [schedule]);
+  const visibleSchedule = useMemo(() => schedule.filter((item) => isSameScheduleDay(item.date, selectedDate)), [schedule, selectedDate]);
   const scheduleTitle = selectedDate === todayKey ? "Agenda de hoje" : `Agenda - ${new Date(`${selectedDate}T12:00:00`).toLocaleDateString("pt-BR")}`;
 
   const handleCreateSchedule = async () => {
+    if (!billingReady) {
+      setFeedback("Carregando permissões da agenda. Tente novamente em instantes.");
+      return;
+    }
+
+    if (!canManageSchedule) {
+      router.push("/billing");
+      return;
+    }
+
     if (!form.patientId) {
       setFeedback("Selecione um paciente para o agendamento.");
       return;
@@ -150,11 +153,40 @@ export function TodaySchedule({
             </div>
           </div>
 
-          <Button type="button" onClick={() => { setOpen(true); setForm(createInitialScheduleState(selectedDate)); }} aria-label="Nova consulta na agenda">
+          <Button
+            type="button"
+            data-testid="new-appointment-button"
+            onClick={() => {
+              if (!billingReady) {
+                setFeedback("Carregando permissões da agenda. Tente novamente em instantes.");
+                return;
+              }
+              if (!canManageSchedule) {
+                router.push("/billing");
+                return;
+              }
+              setOpen(true);
+              setForm(createInitialScheduleState(selectedDate));
+            }}
+            aria-label="Nova consulta na agenda"
+            disabled={!billingReady}
+          >
             <PlusCircle className="h-4 w-4" />
-            Nova consulta na agenda
+            {billingReady ? "Nova consulta na agenda" : "Carregando agenda..."}
           </Button>
         </div>
+
+        {!canManageSchedule ? (
+          <div className="mt-5 rounded-3xl border border-[#caece6] bg-[#f8fdfc] p-4 text-sm text-muted">
+            A agenda completa faz parte do plano Pro. Você ainda pode visualizar o histórico do dia e fazer upgrade quando quiser.
+            <div className="mt-3">
+              <Link href="/billing" className={buttonStyles({ className: "px-4 py-2.5" })}>
+                <Sparkles className="h-4 w-4" />
+                Fazer upgrade
+              </Link>
+            </div>
+          </div>
+        ) : null}
 
         {calendarOpen ? (
           <div className="mt-5">
@@ -175,7 +207,7 @@ export function TodaySchedule({
 
       {open ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f172a]/30 px-4 py-8">
-          <div className="w-full max-w-2xl rounded-[28px] border border-line bg-white p-6 shadow-card">
+          <div data-testid="appointment-modal" className="w-full max-w-2xl rounded-[28px] border border-line bg-white p-6 shadow-card">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-2xl font-semibold tracking-tight text-ink">Novo agendamento</h3>
@@ -192,6 +224,7 @@ export function TodaySchedule({
               <label className="block md:col-span-2">
                 <span className="mb-2 block text-sm font-medium text-ink">Paciente</span>
                 <select
+                  data-testid="appointment-patient-select"
                   className="h-12 w-full rounded-2xl border border-line bg-white px-4 text-sm text-ink shadow-sm outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10"
                   value={form.patientId}
                   onChange={(event) => setForm((current) => ({ ...current, patientId: event.target.value }))}
@@ -231,7 +264,7 @@ export function TodaySchedule({
               <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="button" onClick={handleCreateSchedule} disabled={saving}>
+              <Button type="button" onClick={handleCreateSchedule} disabled={saving} data-testid="appointment-save-button">
                 {saving ? "Salvando..." : "Salvar agendamento"}
               </Button>
             </div>

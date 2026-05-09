@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CalendarClock, ClipboardList, Search } from "lucide-react";
@@ -11,7 +11,7 @@ import { buttonStyles } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MetricCard } from "@/components/ui/metric-card";
 import { buildCompletedScheduleItems, normalizeScheduleDateKey, shouldAppearInReturnList } from "@/lib/consultation-date";
-import { Patient, ScheduleItem } from "@/lib/types";
+import { BillingSummary, Patient, ScheduleItem } from "@/lib/types";
 import { calculateAge, formatDate } from "@/lib/utils";
 
 type PatientLookup = {
@@ -50,7 +50,10 @@ function toLookup(patient: Patient): PatientLookup {
 
 export function OverviewDashboard({ patients }: { patients: Patient[] }) {
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [scheduledItems, setScheduledItems] = useState<ScheduleItem[]>([]);
+  const [billing, setBilling] = useState<BillingSummary | null>(null);
+  const [billingReady, setBillingReady] = useState(false);
   const today = new Date();
   const lookups = useMemo(() => patients.map(toLookup), [patients]);
 
@@ -62,7 +65,19 @@ export function OverviewDashboard({ patients }: { patients: Patient[] }) {
       setScheduledItems(items);
     };
 
+    const loadBilling = async () => {
+      try {
+        const response = await fetch("/api/billing");
+        if (!response.ok) return;
+        const payload = (await response.json()) as BillingSummary;
+        setBilling(payload);
+      } finally {
+        setBillingReady(true);
+      }
+    };
+
     void loadSchedule();
+    void loadBilling();
   }, []);
 
   const schedule = useMemo(() => {
@@ -80,10 +95,10 @@ export function OverviewDashboard({ patients }: { patients: Patient[] }) {
   }, [patients, scheduledItems]);
 
   const filteredPatients = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = deferredQuery.trim().toLowerCase();
     if (!normalized) return [];
     return lookups.filter((patient) => patient.name.toLowerCase().includes(normalized)).slice(0, 6);
-  }, [lookups, query]);
+  }, [lookups, deferredQuery]);
 
   const reminders = useMemo(() => {
     return lookups
@@ -125,11 +140,7 @@ export function OverviewDashboard({ patients }: { patients: Patient[] }) {
               {filteredPatients.length ? (
                 <div className="space-y-2">
                   {filteredPatients.map((patient) => (
-                    <Link
-                      key={patient.id}
-                      href={`/patients/${patient.id}`}
-                      className="flex items-center justify-between rounded-2xl px-4 py-3 transition hover:bg-sage/50"
-                    >
+                    <Link key={patient.id} href={`/patients/${patient.id}`} className="flex items-center justify-between rounded-2xl px-4 py-3 transition hover:bg-sage/50">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-ink">{patient.name}</p>
                         <p className="mt-1 text-xs text-muted">
@@ -149,7 +160,13 @@ export function OverviewDashboard({ patients }: { patients: Patient[] }) {
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-[1.15fr_1fr]">
-        <TodaySchedule patients={patients} schedule={schedule} onScheduleCreated={(item) => setScheduledItems((current) => [...current, item])} />
+        <TodaySchedule
+          patients={patients}
+          schedule={schedule}
+          billingReady={billingReady}
+          canManageSchedule={Boolean(billing?.access.canUseAdvancedAgenda)}
+          onScheduleCreated={(item) => setScheduledItems((current) => [...current, item])}
+        />
 
         <Card className="p-6">
           <div className="flex items-center gap-3">
@@ -252,3 +269,6 @@ function ReminderCard({
     </div>
   );
 }
+
+
+

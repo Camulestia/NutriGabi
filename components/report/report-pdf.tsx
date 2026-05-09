@@ -1,10 +1,11 @@
 ﻿"use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Document, Page, StyleSheet, Text, View, pdf } from "@react-pdf/renderer";
 
 import { calculateAnthropometricMetrics } from "@/lib/anthropometry";
-import { Consultation, Patient } from "@/lib/types";
+import { BillingSummary, Consultation, Patient, UserSettings } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
 const styles = StyleSheet.create({
@@ -48,12 +49,14 @@ function ReportDocument({
   patient,
   consultation,
   professionalName,
-  showProfessionalWarning
+  showProfessionalWarning,
+  pdfFooter
 }: {
   patient: Patient;
   consultation: Consultation;
   professionalName?: string;
   showProfessionalWarning?: boolean;
+  pdfFooter?: string;
 }) {
   const metrics = calculateAnthropometricMetrics(consultation.anthropometry);
   const semiologyEntries = Object.values(consultation.semiology);
@@ -158,6 +161,12 @@ function ReportDocument({
           <Text style={styles.sectionTitle}>Assinatura</Text>
           <Text style={styles.line}>{professionalName ?? "Nutricionista responsável"}</Text>
         </View>
+
+        {pdfFooter?.trim() ? (
+          <View>
+            <Text style={styles.subtitle}>{pdfFooter}</Text>
+          </View>
+        ) : null}
       </Page>
     </Document>
   );
@@ -177,20 +186,50 @@ export function ReportPdfDownload({
   professionalName?: string;
 }) {
   const [loading, setLoading] = useState(false);
-  const hasReportContent = Boolean(
-    consultation.objective || consultation.professionalDiagnosis || consultation.aiInterpretation || consultation.chiefComplaint
-  );
+  const [canExport, setCanExport] = useState<boolean | null>(null);
+  const [settings, setSettings] = useState<Pick<UserSettings, "reportSignature" | "defaultPdfFooter"> | null>(null);
+  const hasReportContent = Boolean(consultation.objective || consultation.professionalDiagnosis || consultation.aiInterpretation || consultation.chiefComplaint);
   const showProfessionalWarning = !consultation.professionalDiagnosis?.trim() || !consultation.conduct?.trim();
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch("/api/billing", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) {
+          setCanExport(true);
+          return;
+        }
+        const payload = (await response.json()) as BillingSummary;
+        setCanExport(Boolean(payload.access.canExportPdf));
+      })
+      .catch(() => setCanExport(true));
+
+    fetch("/api/settings", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const payload = (await response.json()) as UserSettings;
+        setSettings({
+          reportSignature: payload.reportSignature,
+          defaultPdfFooter: payload.defaultPdfFooter
+        });
+      })
+      .catch(() => undefined);
+
+    return () => controller.abort();
+  }, []);
 
   const handleGenerate = async () => {
     setLoading(true);
     try {
+      const resolvedProfessionalName = professionalName ?? settings?.reportSignature;
       const blob = await pdf(
         <ReportDocument
           patient={patient}
           consultation={consultation}
-          professionalName={professionalName}
+          professionalName={resolvedProfessionalName}
           showProfessionalWarning={showProfessionalWarning}
+          pdfFooter={settings?.defaultPdfFooter}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -208,19 +247,36 @@ export function ReportPdfDownload({
     return <span className="text-sm text-muted">Relatório ainda não disponível para esta consulta.</span>;
   }
 
+  if (canExport === false) {
+    return (
+      <div className="space-y-2">
+        <Link
+          href="/billing"
+          className={
+            className ??
+            "inline-flex items-center justify-center rounded-full border border-line bg-white px-4 py-2.5 text-sm font-medium text-ink transition hover:border-moss/30 hover:bg-[#effbf8]"
+          }
+        >
+          Fazer upgrade para PDF
+        </Link>
+        <p className="text-xs text-[#b45309]">Relatórios em PDF fazem parte do plano Pro.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <button
         type="button"
         onClick={handleGenerate}
-        disabled={loading}
+        disabled={loading || canExport === null}
         className={
           className ??
           "inline-flex items-center justify-center rounded-full border border-line bg-white px-4 py-2.5 text-sm font-medium text-ink transition hover:border-moss/30 hover:bg-[#effbf8] disabled:opacity-60"
         }
         aria-label={label}
       >
-        {loading ? "Preparando PDF..." : label}
+        {canExport === null ? "Verificando acesso..." : loading ? "Preparando PDF..." : label}
       </button>
       {showProfessionalWarning ? <p className="text-xs text-[#b45309]">Relatório sem avaliação profissional completa.</p> : null}
     </div>

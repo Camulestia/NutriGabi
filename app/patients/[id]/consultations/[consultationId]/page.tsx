@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { ConsultationWizardV3 } from "@/components/consultation/consultation-wizard-v3";
+import { requireUser } from "@/lib/clerk-auth";
+import { requireCompletedOnboarding } from "@/lib/onboarding";
 import { getConsultationById, getPatientById } from "@/lib/services/repository";
 
 export default async function ConsultationDetailsPage({
@@ -10,6 +12,8 @@ export default async function ConsultationDetailsPage({
   params: Promise<{ id: string; consultationId: string }>;
   searchParams: Promise<{ step?: string }>;
 }) {
+  await requireUser();
+  await requireCompletedOnboarding();
   const { id, consultationId } = await params;
   const { step } = await searchParams;
   const [patient, consultation] = await Promise.all([getPatientById(id), getConsultationById(id, consultationId)]);
