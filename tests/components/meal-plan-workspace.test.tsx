@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+﻿import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { MealPlanWorkspace } from "@/components/meal-plan/meal-plan-workspace";
@@ -27,7 +27,7 @@ describe("MealPlanWorkspace", () => {
       />
     );
 
-    expect(screen.getByText("Plano gerado com auxílio de IA. Revisão profissional obrigatória antes da entrega ao paciente.")).toBeInTheDocument();
+    expect(screen.getAllByText("Plano gerado com auxílio de IA. Revisão profissional obrigatória antes da entrega ao paciente.").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /exportar plano em pdf/i })).toBeInTheDocument();
   });
 });

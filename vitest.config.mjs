@@ -13,7 +13,12 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
-    include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx", "tests/components/**/*.test.jsx"]
+    include: [
+      "tests/unit/**/*.test.ts",
+      "tests/unit/**/*.test.tsx",
+      "tests/components/**/*.test.jsx",
+      "tests/components/**/*.test.tsx"
+    ]
   },
   resolve: {
     alias: {

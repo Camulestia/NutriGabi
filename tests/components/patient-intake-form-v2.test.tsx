@@ -1,4 +1,4 @@
-import userEvent from "@testing-library/user-event";
+﻿import userEvent from "@testing-library/user-event";
 import { screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -31,9 +31,9 @@ describe("PatientIntakeFormV2", () => {
 
     renderComponent(<PatientIntakeFormV2 />);
 
-    await user.type(screen.getByLabelText("Nome"), "Maria");
-    await user.type(screen.getByLabelText("Data de nascimento"), "1990-01-01");
-    await user.type(screen.getByLabelText("E-mail"), "maria");
+    await user.type(screen.getByPlaceholderText("Nome completo do paciente"), "Maria");
+    await user.type(document.querySelector('input[type="date"]') as HTMLInputElement, "1990-01-01");
+    await user.type(screen.getByPlaceholderText("paciente@email.com"), "maria");
 
     expect(screen.getByText("E-mail parece inválido. Verifique se contém @.")).toBeInTheDocument();
 

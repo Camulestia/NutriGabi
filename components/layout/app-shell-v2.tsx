@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SignOutButton, useUser } from "@clerk/nextjs";
-import { CreditCard, LayoutDashboard, LogOut, Menu, Settings, Users } from "lucide-react";
+import { CreditCard, LayoutDashboard, LogOut, Menu, Settings, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -28,6 +28,7 @@ export function AppShellV2({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useUser();
   const [billing, setBilling] = useState<BillingSummary | null>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const isAuthRoute = shelllessRoutes.some((route) => pathname.startsWith(route));
 
@@ -54,6 +55,23 @@ export function AppShellV2({ children }: { children: React.ReactNode }) {
     return () => controller.abort();
   }, [user]);
 
+  useEffect(() => {
+    setIsMobileSidebarOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isMobileSidebarOpen) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isMobileSidebarOpen]);
+
   if (isAuthRoute) {
     return <div className="min-h-screen bg-sand">{children}</div>;
   }
@@ -66,44 +84,71 @@ export function AppShellV2({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-sand">
       <div className="mx-auto flex min-h-screen max-w-[1600px] gap-6 px-4 py-4 lg:px-6">
         <aside className="hidden w-[260px] shrink-0 lg:block">
-          <div className="panel sticky top-4 flex h-[calc(100vh-2rem)] flex-col rounded-[28px] border px-5 py-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-moss text-lg font-semibold text-white">N</div>
-              <div>
-                <p className="text-sm font-semibold text-ink">NutriConsulta IA</p>
-                <p className="text-xs text-muted">SaaS clínico para nutrição</p>
+          <SidebarContent pathname={pathname} />
+        </aside>
+
+        {isMobileSidebarOpen ? (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <button
+              type="button"
+              aria-label="Fechar menu"
+              data-testid="mobile-sidebar-overlay"
+              className="absolute inset-0 bg-slate-950/35"
+              onClick={() => setIsMobileSidebarOpen(false)}
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu principal"
+              data-testid="mobile-sidebar-drawer"
+              className="absolute left-0 top-0 h-full w-[min(88vw,320px)] border-r border-line bg-sand p-4 shadow-2xl"
+            >
+              <div className="panel flex h-full flex-col rounded-[28px] border px-5 py-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-moss text-lg font-semibold text-white">N</div>
+                    <div>
+                      <p className="text-sm font-semibold text-ink">NutriConsulta IA</p>
+                      <p className="text-xs text-muted">SaaS clínico para nutrição</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Fechar menu"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-line bg-white text-muted"
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <SidebarNav pathname={pathname} onNavigate={() => setIsMobileSidebarOpen(false)} />
+
+                <div className="mt-auto space-y-4">
+                  <div className="rounded-[24px] border border-[#caece6] bg-sage p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-moss">Fluxo de consulta</p>
+                    <p className="mt-2 text-sm leading-6 text-ink">
+                      Interface otimizada para consultório, com leitura rápida, cards clínicos e jornada passo a passo.
+                    </p>
+                  </div>
+
+                  {user ? (
+                    <SignOutButton>
+                      <button
+                        type="button"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink transition hover:border-moss hover:text-moss"
+                        onClick={() => setIsMobileSidebarOpen(false)}
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Sair</span>
+                      </button>
+                    </SignOutButton>
+                  ) : null}
+                </div>
               </div>
             </div>
-
-            <nav className="mt-8 space-y-2">
-              {items.map((item) => {
-                const Icon = item.icon;
-                const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition",
-                      active ? "bg-moss text-white shadow-sm" : "text-muted hover:bg-sage hover:text-ink"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <div className="mt-auto rounded-[24px] border border-[#caece6] bg-sage p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-moss">Fluxo de consulta</p>
-              <p className="mt-2 text-sm leading-6 text-ink">
-                Interface otimizada para consultório, com leitura rápida, cards clínicos e jornada passo a passo.
-              </p>
-            </div>
           </div>
-        </aside>
+        ) : null}
 
         <main className="min-w-0 flex-1">
           <header className="panel mb-6 rounded-[28px] border px-5 py-4">
@@ -112,7 +157,9 @@ export function AppShellV2({ children }: { children: React.ReactNode }) {
                 <button
                   type="button"
                   aria-label="Abrir menu"
+                  data-testid="mobile-menu-button"
                   className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-line bg-white text-muted lg:hidden"
+                  onClick={() => setIsMobileSidebarOpen(true)}
                 >
                   <Menu className="h-4 w-4" />
                 </button>
@@ -150,5 +197,60 @@ export function AppShellV2({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     </div>
+  );
+}
+
+function SidebarContent({ pathname }: { pathname: string }) {
+  return (
+    <div className="panel sticky top-4 flex h-[calc(100vh-2rem)] flex-col rounded-[28px] border px-5 py-6">
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-moss text-lg font-semibold text-white">N</div>
+        <div>
+          <p className="text-sm font-semibold text-ink">NutriConsulta IA</p>
+          <p className="text-xs text-muted">SaaS clínico para nutrição</p>
+        </div>
+      </div>
+
+      <SidebarNav pathname={pathname} />
+
+      <div className="mt-auto rounded-[24px] border border-[#caece6] bg-sage p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-moss">Fluxo de consulta</p>
+        <p className="mt-2 text-sm leading-6 text-ink">
+          Interface otimizada para consultório, com leitura rápida, cards clínicos e jornada passo a passo.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function SidebarNav({
+  pathname,
+  onNavigate
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  return (
+    <nav className="mt-8 space-y-2">
+      {items.map((item) => {
+        const Icon = item.icon;
+        const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+
+        return (
+          <Link
+            key={item.label}
+            href={item.href}
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition",
+              active ? "bg-moss text-white shadow-sm" : "text-muted hover:bg-sage hover:text-ink"
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

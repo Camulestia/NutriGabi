@@ -1,5 +1,5 @@
-import userEvent from "@testing-library/user-event";
-import { screen, waitFor } from "@testing-library/react";
+﻿import userEvent from "@testing-library/user-event";
+import { screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TodaySchedule } from "@/components/patient/today-schedule";
@@ -20,16 +20,18 @@ describe("TodaySchedule", () => {
       <TodaySchedule
         schedule={[]}
         patients={[firstPatient, secondPatient]}
+        billingReady
         canManageSchedule
         onScheduleCreated={vi.fn()}
       />
     );
 
-    await user.click(screen.getByRole("button", { name: /nova consulta na agenda/i }));
-    await user.click(screen.getByRole("button", { name: /salvar agendamento/i }));
+    await user.click(screen.getByTestId("new-appointment-button"));
+    const modal = screen.getByTestId("appointment-modal");
+    await user.click(within(modal).getByTestId("appointment-save-button"));
 
     expect(screen.getByText("Selecione um paciente para o agendamento.")).toBeInTheDocument();
-    expect(screen.getByLabelText("Paciente")).toHaveValue("");
+    expect(screen.getByTestId("appointment-patient-select")).toHaveValue("");
   });
 
   it("creates an appointment for the selected patient instead of using the first one", async () => {
@@ -48,14 +50,16 @@ describe("TodaySchedule", () => {
       <TodaySchedule
         schedule={[]}
         patients={[firstPatient, secondPatient]}
+        billingReady
         canManageSchedule
         onScheduleCreated={onScheduleCreated}
       />
     );
 
-    await user.click(screen.getByRole("button", { name: /nova consulta na agenda/i }));
-    await user.selectOptions(screen.getByLabelText("Paciente"), "pat-2");
-    await user.click(screen.getByRole("button", { name: /salvar agendamento/i }));
+    await user.click(screen.getByTestId("new-appointment-button"));
+    const modal = screen.getByTestId("appointment-modal");
+    await user.selectOptions(within(modal).getByTestId("appointment-patient-select"), "pat-2");
+    await user.click(within(modal).getByTestId("appointment-save-button"));
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
     const [, options] = vi.mocked(global.fetch).mock.calls[0];

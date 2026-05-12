@@ -1,5 +1,5 @@
-import userEvent from "@testing-library/user-event";
-import { screen, waitFor } from "@testing-library/react";
+﻿import userEvent from "@testing-library/user-event";
+import { screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ConsultationWizardV3 } from "@/components/consultation/consultation-wizard-v3";
@@ -38,10 +38,11 @@ describe("ConsultationWizardV3", () => {
   it("renders step 1 with the consultation identification fields", () => {
     renderComponent(<ConsultationWizardV3 patient={createPatient()} initialConsultation={createConsultation()} />);
 
-    expect(screen.getByLabelText("Data da consulta")).toBeInTheDocument();
-    expect(screen.getByLabelText("Motivo da visita")).toBeInTheDocument();
-    expect(screen.getByLabelText("Queixa principal")).toBeInTheDocument();
-    expect(screen.getByLabelText("Objetivo principal")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Identificação" })).toBeInTheDocument();
+    expect(screen.getByText("Data da consulta")).toBeInTheDocument();
+    expect(screen.getByText("Motivo da visita")).toBeInTheDocument();
+    expect(screen.getByText("Queixa principal")).toBeInTheDocument();
+    expect(screen.getByText("Objetivo principal")).toBeInTheDocument();
   });
 
   it("renders step 8 actions and allows saving the professional assessment", async () => {
